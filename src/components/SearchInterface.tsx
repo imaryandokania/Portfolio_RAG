@@ -56,6 +56,29 @@ export default function SearchInterface() {
     []
   );
 
+  const primaryEducation = resumeData.sections.education?.[0];
+
+  const heroEducation = useMemo(() => {
+    if (!primaryEducation) {
+      return '';
+    }
+    const { degree = '', university = '' } = primaryEducation;
+
+    let compactDegree = degree;
+    if (/master of science/i.test(degree) && /computer science/i.test(degree)) {
+      compactDegree = 'MS CS';
+    } else if (/master of science/i.test(degree)) {
+      compactDegree = 'MS';
+    }
+
+    let compactUniversity = university;
+    if (/university of california san diego/i.test(university)) {
+      compactUniversity = 'UC San Diego';
+    }
+
+    return `${compactDegree} @ ${compactUniversity}`.trim();
+  }, [primaryEducation]);
+
   const highlightProjects = useMemo(
     () => resumeData.sections.projects?.slice(0, 2) ?? [],
     []
@@ -284,8 +307,6 @@ export default function SearchInterface() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const primaryEducation = resumeData.sections.education?.[0];
-
   function scoreDocument(queryTokens: string[], docTokens: string[]) {
     if (!queryTokens.length || !docTokens.length) {
       return 0;
@@ -399,14 +420,16 @@ export default function SearchInterface() {
                   >
                     {resumeData.name}
                   </motion.h1>
-                  <motion.p 
-                    className="text-[#00fff5] text-lg md:text-xl"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    {primaryEducation?.degree} @ {primaryEducation?.university}
-                  </motion.p>
+                  {heroEducation && (
+                    <motion.p 
+                      className="text-[#00fff5] text-lg md:text-xl"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      {heroEducation}
+                    </motion.p>
+                  )}
                 </div>
                 {resumeData.sections.summary && (
                   <motion.p 
