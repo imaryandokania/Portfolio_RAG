@@ -2,12 +2,38 @@
 
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
-import * as random from 'maath/random';
-import { useState, useRef, Suspense } from 'react';
+import { useMemo, useRef, Suspense } from 'react';
 
 function Stars(props: any) {
   const ref = useRef<any>(null);
-  const [sphere] = useState(() => random.inSphere(new Float32Array(5000), { radius: 1.5 }));
+  const positions = useMemo(() => {
+    const count = 1500;
+    const buffer = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i += 1) {
+      let x = 0;
+      let y = 0;
+      let z = 0;
+      let lengthSquared = 0;
+
+      // Rejection sampling to keep points inside a unit sphere
+      while (!lengthSquared || lengthSquared > 1) {
+        x = Math.random() * 2 - 1;
+        y = Math.random() * 2 - 1;
+        z = Math.random() * 2 - 1;
+        lengthSquared = x * x + y * y + z * z;
+      }
+
+      const length = Math.sqrt(lengthSquared);
+      const scale = (1.5 * Math.cbrt(Math.random())) / length;
+      const offset = i * 3;
+      buffer[offset] = x * scale;
+      buffer[offset + 1] = y * scale;
+      buffer[offset + 2] = z * scale;
+    }
+
+    return buffer;
+  }, []);
 
   useFrame((state, delta) => {
     if (!ref.current) return;
@@ -17,7 +43,7 @@ function Stars(props: any) {
 
   return (
     <group rotation={[0, 0, Math.PI / 4]}>
-      <Points ref={ref} positions={sphere} stride={3} frustumCulled={false} {...props}>
+      <Points ref={ref} positions={positions} stride={3} frustumCulled={false} {...props}>
         <PointMaterial
           transparent
           color="#00fff5"

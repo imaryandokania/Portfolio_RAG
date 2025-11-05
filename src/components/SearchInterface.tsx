@@ -23,7 +23,7 @@ export default function SearchInterface() {
   const [activeSection, setActiveSection] = useState('');
   const [searchResults, setSearchResults] = useState<ResumeDocument[]>([]);
   const [lastQuery, setLastQuery] = useState('');
-  const [missionTime, setMissionTime] = useState(() => new Date());
+  const [missionClock, setMissionClock] = useState('--:--:--');
 
   const contactEntries = useMemo(
     () => [
@@ -82,14 +82,6 @@ export default function SearchInterface() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setMissionTime(new Date());
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const missionClock = useMemo(() => {
     const formatter = new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -97,8 +89,16 @@ export default function SearchInterface() {
       hour12: false,
       timeZoneName: 'short'
     });
-    return formatter.format(missionTime);
-  }, [missionTime]);
+
+    const updateClock = () => {
+      setMissionClock(formatter.format(new Date()));
+    };
+
+    updateClock();
+    const timer = window.setInterval(updateClock, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const telemetryMetrics = useMemo(() => {
     const aggregated = computeExperienceMetrics();
