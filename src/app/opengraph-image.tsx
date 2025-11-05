@@ -96,9 +96,10 @@ export default function OgImage() {
                 letterSpacing: "0.45em",
                 textTransform: "uppercase",
                 color: "rgba(56,189,248,0.75)",
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
                 gap: "10px",
+                width: "fit-content",
               }}
             >
               <span
@@ -227,7 +228,7 @@ export default function OgImage() {
               >
                 <span
                   style={{
-                    display: "inline-flex",
+                    display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     width: "30px",
