@@ -136,14 +136,6 @@ export default function SearchInterface() {
     ];
   }, []);
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setScanTick((tick) => (tick + 1) % 2048);
-    }, 3500);
-
-    return () => window.clearInterval(interval);
-  }, []);
-
   function tokenize(text: string) {
     return text
       .toLowerCase()
