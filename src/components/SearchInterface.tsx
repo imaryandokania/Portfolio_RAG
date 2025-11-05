@@ -437,27 +437,29 @@ export default function SearchInterface() {
             >
               {resumeData.name}
             </motion.h1>
-            <motion.form 
-              onSubmit={handleSearch} 
+            <motion.form
+              onSubmit={handleSearch}
               className="w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45 }}
             >
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#00fff5]/30" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(0,255,245,0.05)]
-                  focus:outline-none focus:ring-2 focus:ring-[#ff2d55] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300"
-                  placeholder="Query the neural archive (skills, experience, projects...)"
-                />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:flex-1">
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#00fff5]/30" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(0,255,245,0.05)]
+                    focus:outline-none focus:ring-2 focus:ring-[#ff2d55] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300"
+                    placeholder="Query the neural archive (skills, experience, projects...)"
+                  />
+                </div>
                 <motion.button
                   type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-gradient-to-r from-[#ff2d55] via-[#b026ff] to-[#00fff5]
-                    px-6 py-2 text-sm md:text-base font-semibold text-white shadow-[0_0_18px_rgba(255,45,85,0.4)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(176,38,255,0.6)]"
+                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-[#ff2d55] via-[#b026ff] to-[#00fff5]
+                    px-6 py-3 text-sm md:text-base font-semibold text-white shadow-[0_0_18px_rgba(255,45,85,0.4)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(176,38,255,0.6)]"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
