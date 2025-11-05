@@ -476,7 +476,7 @@ export default function SearchInterface() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.05)]
                     focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-center"
-                    placeholder="What do you want to know about Aryan?"
+                    placeholder="Search about Aryan"
                   />
                   <AnimatePresence>
                     {isSearching && (
