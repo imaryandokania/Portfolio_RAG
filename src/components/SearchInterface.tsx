@@ -44,13 +44,23 @@ export default function SearchInterface() {
       },
       {
         label: 'LinkedIn',
-        value: resumeData.contact.linkedin,
-        href: `https://${resumeData.contact.linkedin}`
+        value: 'aryandokania',
+        href: `https://${resumeData.contact.linkedin}`,
+        icon: (
+          <svg className="h-4 w-4 text-[#00fff5]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M4.98 3.5a2.5 2.5 0 1 1-.01 5 2.5 2.5 0 0 1 .01-5ZM3 9h3.95v12H3zM10.5 9H14v1.64h.05c.49-.93 1.69-1.91 3.48-1.91 3.72 0 4.41 2.45 4.41 5.64V21H18V15.1c0-1.4-.03-3.21-2-3.21-2 0-2.31 1.56-2.31 3.09V21h-3.95z" />
+          </svg>
+        )
       },
       {
         label: 'GitHub',
-        value: resumeData.contact.github,
-        href: `https://${resumeData.contact.github}`
+        value: 'imaryandokania',
+        href: `https://${resumeData.contact.github}`,
+        icon: (
+          <svg className="h-4 w-4 text-[#00fff5]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.69-3.88-1.54-3.88-1.54-.53-1.36-1.3-1.72-1.3-1.72-1.06-.73.08-.72.08-.72 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.74 1.27 3.41.97.1-.76.41-1.27.75-1.56-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.29 1.19-3.1-.12-.3-.52-1.52.11-3.17 0 0 .98-.31 3.21 1.18a11.1 11.1 0 0 1 2.92-.39c.99 0 1.99.13 2.92.39 2.22-1.49 3.2-1.18 3.2-1.18.64 1.65.24 2.87.12 3.17.74.81 1.19 1.84 1.19 3.1 0 4.41-2.69 5.38-5.25 5.66.42.36.8 1.08.8 2.17 0 1.57-.02 2.83-.02 3.22 0 .31.21.67.79.56A10.52 10.52 0 0 0 23.5 12c0-6.35-5.15-11.5-11.5-11.5Z" />
+          </svg>
+        )
       }
     ],
     []
@@ -421,7 +431,7 @@ export default function SearchInterface() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                   >
-                    Portfolio
+                    Aryan Dokania
                   </motion.div>
                   <motion.h1 
                     className="text-5xl md:text-6xl font-bold text-white leading-tight cyberpunk-glow"
@@ -459,7 +469,7 @@ export default function SearchInterface() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  {contactEntries.map(({ label, value, href }) => (
+                  {contactEntries.map(({ label, value, href, icon }) => (
                     <motion.a
                       key={label}
                       href={href}
@@ -471,7 +481,10 @@ export default function SearchInterface() {
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.18),_transparent_60%)]" />
                       <div className="relative space-y-1">
                         <p className="text-xs uppercase tracking-[0.2em] text-white/60">{label}</p>
-                        <p className="text-sm md:text-base text-white/90 break-words">{value}</p>
+                        <div className="flex items-center gap-2 text-sm md:text-base text-white/90 break-all">
+                          {icon && <span>{icon}</span>}
+                          <span>{value}</span>
+                        </div>
                       </div>
                     </motion.a>
                   ))}
