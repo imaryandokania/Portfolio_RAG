@@ -20,6 +20,7 @@ export default function SearchInterface() {
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [searchResults, setSearchResults] = useState<ResumeDocument[]>([]);
+  const [lastQuery, setLastQuery] = useState('');
 
   const contactEntries = useMemo(
     () => [
@@ -229,10 +230,12 @@ export default function SearchInterface() {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setActiveSection('');
+      setLastQuery('');
       return;
     }
 
     setIsSearching(true);
+    setLastQuery(searchQuery.trim());
     const queryTokens = tokenize(searchQuery);
 
     const scored = indexedDocuments
@@ -262,6 +265,7 @@ export default function SearchInterface() {
       .map(({ tokens, ...rest }) => rest);
 
     setSearchResults(filtered);
+    setLastQuery('');
   };
 
   return (
@@ -552,14 +556,14 @@ export default function SearchInterface() {
                 </motion.div>
               ))}
 
-              {searchQuery && !isSearching && searchResults.length === 0 && (
+              {lastQuery && !isSearching && searchResults.length === 0 && (
                 <motion.div 
                   className="text-center text-[#ff2d55]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  No matches found in the database
+                  No matches found for “{lastQuery}”. Try different keywords or browse a section.
                 </motion.div>
               )}
             </motion.div>
