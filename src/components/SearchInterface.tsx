@@ -582,7 +582,7 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          {!agentAnswer && !error && !isSearching && !searchQuery && (
+          {!isSearching && !error && (
             <motion.div
               className="space-y-6"
               initial={{ opacity: 0, y: 15 }}
