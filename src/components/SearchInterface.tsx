@@ -477,16 +477,28 @@ export default function SearchInterface() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45 }}
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                 <div className="relative w-full sm:flex-1 pb-4 sm:pb-0">
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[#38bdf8]/15 via-transparent to-[#6366f1]/20 blur-xl" />
                   <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#38bdf8]/30" />
+                  <div className="pointer-events-none absolute inset-x-6 top-3 flex items-center justify-between text-[11px] uppercase tracking-[0.34em] text-white/40">
+                    <span>Neural Query Console</span>
+                    <span>Live</span>
+                  </div>
+                  <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-[#38bdf8]">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <circle cx="11" cy="11" r="7" />
+                      <line x1="16.65" y1="16.65" x2="21" y2="21" strokeLinecap="round" />
+                    </svg>
+                  </span>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.05)]
-                    focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-center"
-                    placeholder="Search about Aryan"
+                    className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
+                    focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
+                    placeholder="What do you want to know about Aryan?"
+                    aria-label="Search Aryan's portfolio"
                   />
                   <AnimatePresence>
                     {isSearching && (
@@ -508,12 +520,24 @@ export default function SearchInterface() {
                 </div>
                 <motion.button
                   type="submit"
-                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#38bdf8]
-                    px-6 py-3 text-sm md:text-base font-semibold text-white shadow-[0_0_18px_rgba(99,102,241,0.35)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(56,189,248,0.45)]"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="relative h-14 w-full sm:h-16 sm:w-48 overflow-hidden rounded-xl bg-[#101827] px-6 text-sm md:text-base font-semibold text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/70 focus:ring-offset-2 focus:ring-offset-black flex items-center justify-center sm:ml-3"
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {isSearching ? 'Scanning…' : 'Execute Search'}
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#6366f1]/25 via-[#a855f7]/20 to-[#38bdf8]/25 opacity-70 blur-xl" />
+                  <span className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-[#38bdf8]/50 to-transparent" />
+                  <div className="relative flex items-center justify-center gap-2">
+                    <motion.span
+                      animate={{ rotate: isSearching ? 360 : 0 }}
+                      transition={{ duration: 1.2, repeat: isSearching ? Infinity : 0, ease: 'linear' }}
+                    >
+                      <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="12" cy="12" r="9" opacity="0.3" />
+                        <path d="M12 3a9 9 0 0 1 9 9" strokeLinecap="round" />
+                      </svg>
+                    </motion.span>
+                    <span>{isSearching ? 'Running Inference…' : 'Deploy Query'}</span>
+                  </div>
                 </motion.button>
               </div>
             </motion.form>
