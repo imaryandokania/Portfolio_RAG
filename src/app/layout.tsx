@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Aryan Dokania | Neural Resume Terminal",
   description:
-    "Explore Aryan Dokania's futuristic resume — an interactive portfolio with AI-assisted search across experience, projects, and skills.",
+    "Interactive resume for Aryan Dokania featuring AI-assisted search across experience, projects, and skills.",
   applicationName: "Aryan Dokania Resume",
   authors: [{ name: "Aryan Dokania" }],
   keywords: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Aryan Dokania | Neural Resume Terminal",
     description:
-      "Browse Aryan's experience and projects through an interactive, cyberpunk-inspired interface.",
+      "AI-assisted resume experience for Aryan Dokania with searchable projects, experience, and skills.",
     url: "https://aryandokania.vercel.app",
     siteName: "Aryan Dokania Resume",
     locale: "en_US",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aryan Dokania | Neural Resume Terminal",
     description:
-      "Interactive resume blending AI-assisted search with a cyberpunk UI."
+      "Interactive resume for Aryan Dokania with AI-assisted search over projects, experience, and skills."
   },
   icons: {
     icon: "/favicon.ico",
