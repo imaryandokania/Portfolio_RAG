@@ -27,9 +27,6 @@ const MONTH_MAP: Record<string, number> = {
   december: 11
 };
 
-export type ResumeExperience = (typeof resumeData.sections.experience)[number];
-export type ResumeProject = (typeof resumeData.sections.projects)[number];
-
 export const ML_KEYWORDS = [
   'ml',
   'machine learning',
@@ -49,6 +46,54 @@ export const ML_KEYWORDS = [
   'sbert',
   'sb bert',
   'llama'
+];
+
+export const DISTRIBUTED_KEYWORDS = [
+  'distributed',
+  'distributed system',
+  'distributed systems',
+  'load balancer',
+  'load-balancer',
+  'gRPC',
+  'grpc',
+  'raft',
+  'vector search',
+  'vector-store',
+  'vectorstore',
+  'faiss',
+  'cache',
+  'consistent hashing',
+  'ha',
+  'high-availability',
+  'high availability',
+  'fault tolerant',
+  'fault-tolerant',
+  'fault tolerance',
+  'resilient',
+  'latency',
+  'scalable',
+  'scalability',
+  'throughput'
+];
+
+export const CLOUD_KEYWORDS = [
+  'aws',
+  'azure',
+  'gcp',
+  'oci',
+  'cloud',
+  'cloud infrastructure',
+  'cloud infra',
+  'cloud-native',
+  'lambda',
+  'ec2',
+  's3',
+  'bedrock',
+  'kubernetes',
+  'docker',
+  'containers',
+  'containerized',
+  'serverless'
 ];
 
 function parseDatePart(part: string) {
@@ -87,10 +132,6 @@ export function monthsBetween(period: string) {
   return (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
 }
 
-export function formatPeriod(period: string) {
-  return period.replace(/\s+/, ' ').trim();
-}
-
 export function computeExperienceMetrics() {
   const experiences = resumeData.sections.experience ?? [];
   const projects = resumeData.sections.projects ?? [];
@@ -108,15 +149,26 @@ export function computeExperienceMetrics() {
     textSegments.push(project.title, ...(project.points ?? []));
   });
 
-  const mlMentions = textSegments.reduce((count, text) => {
-    const lower = text.toLowerCase();
-    return count + (ML_KEYWORDS.some((keyword) => lower.includes(keyword)) ? 1 : 0);
-  }, 0);
+  const countMentions = (keywords: string[]) =>
+    textSegments.reduce((count, text) => {
+      const lower = text.toLowerCase();
+      return count + (keywords.some((keyword) => lower.includes(keyword)) ? 1 : 0);
+    }, 0);
+
+  const mlMentions = countMentions(ML_KEYWORDS);
   const aiCoverage = textSegments.length ? mlMentions / textSegments.length : 0;
   const aiScore = Math.max(25, Math.min(100, Math.round(aiCoverage * 130)));
 
+  const distributedMentions = countMentions(DISTRIBUTED_KEYWORDS);
+  const distributedCoverage = textSegments.length ? distributedMentions / textSegments.length : 0;
+  const distributedScore = Math.max(25, Math.min(100, Math.round(distributedCoverage * 150)));
+
+  const cloudMentions = countMentions(CLOUD_KEYWORDS);
   const cloudToolCount = skills?.cloudTools?.length ?? 0;
-  const cloudScore = Math.max(30, Math.min(100, Math.round((cloudToolCount / 10) * 100)));
+  const cloudScore = Math.max(
+    30,
+    Math.min(100, Math.round(((cloudToolCount + cloudMentions / 2) / 12) * 100))
+  );
 
   const projectPoints = projects.reduce((total, project) => total + (project.points?.length ?? 0), 0);
   const projectScore = Math.max(25, Math.min(100, Math.round((projectPoints / 12) * 100)));
@@ -127,25 +179,12 @@ export function computeExperienceMetrics() {
     experienceScore,
     mlMentions,
     aiScore,
+    distributedMentions,
+    distributedScore,
+    cloudMentions,
     cloudToolCount,
     cloudScore,
     projectPoints,
     projectScore
-  };
-}
-
-export function computeRoleAnalytics(experience: ResumeExperience) {
-  const months = monthsBetween(experience.period);
-  const aiMentions = (experience.points ?? []).reduce((count, point) => {
-    const lower = point.toLowerCase();
-    return count + (ML_KEYWORDS.some((keyword) => lower.includes(keyword)) ? 1 : 0);
-  }, 0);
-  const aiDensity = (experience.points?.length ?? 1) ? aiMentions / (experience.points?.length ?? 1) : 0;
-  const aiScore = Math.round(Math.min(1, aiDensity * 1.4) * 100);
-
-  return {
-    months,
-    aiMentions,
-    aiScore
   };
 }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resumeData } from '../data/resumeData';
 import { computeExperienceMetrics } from '../utils/resumeMetrics';
-import ExperienceTimeline from './ExperienceTimeline';
+import SkillClusterBars from './SkillClusterBars';
 import CyberBackground from './CyberBackground';
 
 type ResumeDocument = {
@@ -102,7 +102,6 @@ export default function SearchInterface() {
 
   const telemetryMetrics = useMemo(() => {
     const aggregated = computeExperienceMetrics();
-    const experiences = resumeData.sections.experience ?? [];
 
     return [
       {
@@ -117,14 +116,14 @@ export default function SearchInterface() {
         value: `${aggregated.experienceScore}`,
         suffix: '/100',
         detail: `${aggregated.experienceYears.toFixed(1)} yrs (${aggregated.experienceMonths} months) of hands-on work`,
-        accent: '#ff2d55'
+        accent: '#b026ff'
       },
       {
         label: 'Cloud Coverage',
         value: `${aggregated.cloudScore}`,
         suffix: '/100',
-        detail: `${aggregated.cloudToolCount} cloud & platform tools tracked`,
-        accent: '#b026ff'
+        detail: `${aggregated.cloudToolCount} tools · ${aggregated.cloudMentions} infra mentions`,
+        accent: '#00b3ff'
       },
       {
         label: 'Project Velocity',
@@ -570,11 +569,11 @@ export default function SearchInterface() {
                   'repeating-linear-gradient(90deg, rgba(0,255,245,0.12), rgba(0,255,245,0.12) 1px, transparent 1px, transparent 24px)'
               }}
             />
-            <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4 auto-rows-fr">
               {telemetryMetrics.map((metric) => (
                 <motion.div
                   key={metric.label}
-                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-4 backdrop-blur-xl"
+                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-4 pb-6 backdrop-blur-xl flex flex-col justify-between"
                   whileHover={{ y: -6 }}
                 >
                   <div
@@ -584,14 +583,16 @@ export default function SearchInterface() {
                     }}
                   />
                   <div className="relative space-y-2">
-                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">{metric.label}</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/60 break-words">
+                      {metric.label}
+                    </p>
                     <p className="flex items-baseline gap-1 text-2xl font-semibold" style={{ color: metric.accent }}>
                       <span>{metric.value}</span>
                       {metric.suffix && (
                         <span className="text-sm text-white/60">{metric.suffix}</span>
                       )}
                     </p>
-                    <p className="text-xs text-white/50">{metric.detail}</p>
+                    <p className="text-xs leading-relaxed text-white/50 break-words">{metric.detail}</p>
                   </div>
                 </motion.div>
               ))}
@@ -600,12 +601,12 @@ export default function SearchInterface() {
 
           {searchResults.length === 0 && !activeSection && !searchQuery && (
             <motion.div
-              className="space-y-4"
+              className="space-y-6"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <ExperienceTimeline />
+              <SkillClusterBars />
             </motion.div>
           )}
 
