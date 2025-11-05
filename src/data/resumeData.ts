@@ -6,7 +6,8 @@ export const resumeData = {
     location: "San Diego, CA",
     email: "aryandokania2001@gmail.com",
     linkedin: "linkedin.com/in/aryandokania",
-    github: "github.com/imaryandokania"
+    github: "github.com/imaryandokania",
+    scholar: "scholar.google.com/citations?user=9TPRFwEAAAAJ&hl=en"
   },
   sections: {
     summary: [
@@ -153,6 +154,29 @@ export const resumeData = {
           "https://drive.google.com/file/d/1tWpVBqV4fi2Brqe1fVq3kJ_vHFzgmsss/view?usp=share_link",
           "https://drive.google.com/file/d/1AmbNINUbuMSymKhOt-PamwOWQc0rI3VL/view?usp=share_link"
         ]
+      }
+    ],
+    research: [
+      {
+        title: "Improving Learning to Optimize Using Parameter Symmetries",
+        authors: ["Guy Zamir", "Aryan Dokania", "Bingqing Zhao", "Rose Yu"],
+        venue: "arXiv preprint arXiv:2504.15399",
+        year: "2025",
+        link: "https://arxiv.org/abs/2504.15399"
+      },
+      {
+        title: "Enhanced Grammar Error Detection and Correction Using Hybrid Algorithm",
+        authors: ["Aryan Dokania", "Aditya Bamb", "A. M. Lal"],
+        venue: "Innovations in Power and Advanced Computing Technologies (i-PACT)",
+        year: "2023",
+        link: "https://ieeexplore.ieee.org/document/10224909"
+      },
+      {
+        title: "Secure File Sharing System Using Hybrid Authentication and Secured Key",
+        authors: ["Aryan Dokania", "Aditya Bamb", "J. Dheeba"],
+        venue: "Intelligent System and Data Analysis: SSIC 2023 Doctoral Symposium",
+        year: "2023",
+        link: "https://link.springer.com/chapter/10.1007/978-3-031-57897-2_36"
       }
     ]
   }

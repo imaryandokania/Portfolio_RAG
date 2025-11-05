@@ -110,6 +110,17 @@ export function buildResumeDocuments(): ResumeDocument[] {
     });
   });
 
+  sections.research?.forEach((paper, index) => {
+    docs.push({
+      id: `research-${index}`,
+      section: "research",
+      title: paper.title,
+      subtitle: `${paper.venue} · ${paper.year}`,
+      content: paper.link,
+      points: paper.authors,
+    });
+  });
+
   return docs;
 }
 
