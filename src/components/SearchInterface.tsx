@@ -612,10 +612,10 @@ export default function SearchInterface() {
               ))}
             </motion.div>
 
-            <div className="flex items-center gap-2 text-xs text-white/60">
+            {/* <div className="flex items-center gap-2 text-xs text-white/60">
               <span className="inline-flex h-2 w-2 rounded-full bg-[#00fff5]" />
               <span>Keyword search ready</span>
-            </div>
+            </div> */}
           </motion.div>
 
           <motion.div

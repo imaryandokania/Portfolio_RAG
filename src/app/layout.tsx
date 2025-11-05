@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Aryan Dokania",
   description:
     "Interactive resume for Aryan Dokania featuring AI-assisted search across experience, projects, and skills.",
-  applicationName: "Aryan Dokania Resume",
+  applicationName: "Aryan Dokania",
   authors: [{ name: "Aryan Dokania" }],
   keywords: [
     "Aryan Dokania",
@@ -16,17 +16,17 @@ export const metadata: Metadata = {
     "RAG"
   ],
   openGraph: {
-    title: "Aryan Dokania | Neural Resume Terminal",
+    title: "Aryan Dokania",
     description:
       "AI-assisted resume experience for Aryan Dokania with searchable projects, experience, and skills.",
     url: "https://aryandokania.vercel.app",
-    siteName: "Aryan Dokania Resume",
+    siteName: "Aryan Dokania",
     locale: "en_US",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Aryan Dokania | Neural Resume Terminal",
+    title: "Aryan Dokania",
     description:
       "Interactive resume for Aryan Dokania with AI-assisted search over projects, experience, and skills."
   },
