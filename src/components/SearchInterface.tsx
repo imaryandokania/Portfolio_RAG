@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resumeData } from '../data/resumeData';
 import CyberBackground from './CyberBackground';
@@ -21,6 +21,7 @@ export default function SearchInterface() {
   const [activeSection, setActiveSection] = useState('');
   const [searchResults, setSearchResults] = useState<ResumeDocument[]>([]);
   const [lastQuery, setLastQuery] = useState('');
+  const [scanTick, setScanTick] = useState(0);
 
   const contactEntries = useMemo(
     () => [
@@ -76,6 +77,59 @@ export default function SearchInterface() {
         items: skills.cloudTools?.slice(0, 4) ?? []
       }
     ];
+  }, []);
+
+  const missionClock = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZoneName: 'short'
+    });
+    return formatter.format(new Date());
+  }, [scanTick]);
+
+  const statusReadings = useMemo(() => {
+    const neuralSync = 92 + ((scanTick * 3) % 7);
+    const signal = 78 + (scanTick % 18);
+    const coherence = 85 + ((scanTick * 2) % 10);
+    const latency = (Math.sin(scanTick / 5) + 1.2).toFixed(2);
+
+    return [
+      {
+        label: 'Neural Sync',
+        value: `${neuralSync}%`,
+        detail: 'vector coherence',
+        accent: '#00fff5'
+      },
+      {
+        label: 'Signal Strength',
+        value: `${signal}%`,
+        detail: 'uplink integrity',
+        accent: '#ff2d55'
+      },
+      {
+        label: 'Inference Coherence',
+        value: `${coherence}%`,
+        detail: 'context alignment',
+        accent: '#b026ff'
+      },
+      {
+        label: 'Latency',
+        value: `${latency} ms`,
+        detail: 'edge response',
+        accent: '#f5f3ff'
+      }
+    ];
+  }, [scanTick]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setScanTick((tick) => (tick + 1) % 2048);
+    }, 3500);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   function tokenize(text: string) {
@@ -372,6 +426,10 @@ export default function SearchInterface() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,45,85,0.15),_transparent_55%)]" />
                 <div className="absolute -top-10 -right-12 h-40 w-40 rounded-full bg-[#ff2d55]/30 blur-3xl" />
                 <div className="relative space-y-5">
+                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/50">
+                    <span>Systems Monitor</span>
+                    <span>{missionClock}</span>
+                  </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.3em] text-white/60">Latest Projects</p>
                     <div className="mt-3 space-y-3">
@@ -492,6 +550,45 @@ export default function SearchInterface() {
                 </motion.button>
               ))}
             </motion.div>
+          </motion.div>
+
+          <motion.div
+            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl shadow-[0_0_60px_rgba(0,255,245,0.06)]"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.08),_transparent_60%)]" />
+            <div
+              className="absolute inset-0 opacity-40 mix-blend-overlay"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(90deg, rgba(0,255,245,0.12), rgba(0,255,245,0.12) 1px, transparent 1px, transparent 24px)'
+              }}
+            />
+            <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {statusReadings.map((metric) => (
+                <motion.div
+                  key={metric.label}
+                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-4 backdrop-blur-xl"
+                  whileHover={{ y: -6 }}
+                >
+                  <div
+                    className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{
+                      background: `radial-gradient(circle at top, ${metric.accent}22, transparent 60%)`
+                    }}
+                  />
+                  <div className="relative space-y-2">
+                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">{metric.label}</p>
+                    <p className="text-2xl font-semibold" style={{ color: metric.accent }}>
+                      {metric.value}
+                    </p>
+                    <p className="text-xs text-white/50">{metric.detail}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
 
           {/* Results Area */}
