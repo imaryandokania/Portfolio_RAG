@@ -135,6 +135,7 @@ export function monthsBetween(period: string) {
 export function computeExperienceMetrics() {
   const experiences = resumeData.sections.experience ?? [];
   const projects = resumeData.sections.projects ?? [];
+  const research = resumeData.sections.research ?? [];
   const skills = resumeData.sections.skills;
 
   const experienceMonths = experiences.reduce((total, role) => total + monthsBetween(role.period), 0);
@@ -148,6 +149,9 @@ export function computeExperienceMetrics() {
   projects.forEach((project) => {
     textSegments.push(project.title, ...(project.points ?? []));
   });
+  research.forEach((paper) => {
+    textSegments.push(paper.title, paper.venue ?? '', ...(paper.authors ?? []));
+  });
 
   const countMentions = (keywords: string[]) =>
     textSegments.reduce((count, text) => {
@@ -157,11 +161,17 @@ export function computeExperienceMetrics() {
 
   const mlMentions = countMentions(ML_KEYWORDS);
   const aiCoverage = textSegments.length ? mlMentions / textSegments.length : 0;
-  const aiScore = Math.max(25, Math.min(100, Math.round(aiCoverage * 130)));
+  const researchSignal = research.length * 1.5;
+  const aiScore = Math.max(
+    45,
+    Math.min(100, Math.round(((mlMentions + researchSignal) / Math.max(1, textSegments.length)) * 160))
+  );
 
   const distributedMentions = countMentions(DISTRIBUTED_KEYWORDS);
-  const distributedCoverage = textSegments.length ? distributedMentions / textSegments.length : 0;
-  const distributedScore = Math.max(25, Math.min(100, Math.round(distributedCoverage * 150)));
+  const distributedScore = Math.max(
+    40,
+    Math.min(100, Math.round(((distributedMentions + research.length) / Math.max(1, textSegments.length)) * 170))
+  );
 
   const cloudMentions = countMentions(CLOUD_KEYWORDS);
   const cloudToolCount = skills?.cloudTools?.length ?? 0;
@@ -171,7 +181,11 @@ export function computeExperienceMetrics() {
   );
 
   const projectPoints = projects.reduce((total, project) => total + (project.points?.length ?? 0), 0);
-  const projectScore = Math.max(25, Math.min(100, Math.round((projectPoints / 12) * 100)));
+  const researchWeight = research.length * 2;
+  const projectScore = Math.max(
+    30,
+    Math.min(100, Math.round(((projectPoints + researchWeight) / 12) * 100))
+  );
 
   return {
     experienceMonths,
@@ -185,6 +199,7 @@ export function computeExperienceMetrics() {
     cloudToolCount,
     cloudScore,
     projectPoints,
-    projectScore
+    projectScore,
+    researchCount: research.length
   };
 }

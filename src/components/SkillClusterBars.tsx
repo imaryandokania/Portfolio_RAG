@@ -14,37 +14,37 @@ export default function SkillClusterBars() {
     {
       label: 'AI / ML Intelligence',
       score: metrics.aiScore,
-      descriptor: `${metrics.mlMentions} ML signals · ${mlSkills} core tools`,
-      accent: '#00fff5'
+      descriptor: `${metrics.mlMentions} ML signals · ${mlSkills} core tools · ${metrics.researchCount} publications`,
+      accent: '#38bdf8'
     },
     {
       label: 'Cloud Infrastructure',
       score: metrics.cloudScore,
       descriptor: `${metrics.cloudMentions} cloud mentions · ${cloudSkills} platforms`,
-      accent: '#00b3ff'
+      accent: '#0ea5e9'
     },
     {
       label: 'Distributed Systems',
       score: metrics.distributedScore,
-      descriptor: `${metrics.distributedMentions} distributed patterns detected`,
-      accent: '#ff2d55'
+      descriptor: `${metrics.distributedMentions} distributed patterns detected · ${metrics.researchCount} research signals`,
+      accent: '#6366f1'
     },
     {
       label: 'Languages & Foundations',
       score: Math.min(100, Math.round(((languageSkills + mlSkills) / 12) * 100)),
       descriptor: `${languageSkills} programming languages`,
-      accent: '#b026ff'
+      accent: '#a855f7'
     }
   ];
 
   return (
     <div className="relative rounded-3xl border border-white/10 bg-black/50 p-6 md:p-8 backdrop-blur-xl overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.1),_transparent_65%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_65%)]" />
       <div
         className="absolute inset-0 opacity-30 mix-blend-overlay"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(90deg, rgba(176,38,255,0.12), rgba(176,38,255,0.12) 1px, transparent 1px, transparent 22px)'
+            'repeating-linear-gradient(90deg, rgba(99,102,241,0.12), rgba(99,102,241,0.12) 1px, transparent 1px, transparent 22px)'
         }}
       />
       <div className="relative space-y-6">
