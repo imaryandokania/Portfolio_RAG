@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resumeData } from '../data/resumeData';
 import { computeExperienceMetrics } from '../utils/resumeMetrics';
@@ -17,6 +17,12 @@ type ResumeDocument = {
   link?: string;
 };
 
+type TrendRecord = {
+  query: string;
+  hits: number;
+  lastSearched: string;
+};
+
 export default function SearchInterface() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -24,6 +30,8 @@ export default function SearchInterface() {
   const [searchResults, setSearchResults] = useState<ResumeDocument[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const [missionClock, setMissionClock] = useState('--:--:--');
+  const [trendRecords, setTrendRecords] = useState<TrendRecord[]>([]);
+  const [trendLoading, setTrendLoading] = useState(true);
 
   const contactEntries = useMemo(
     () => [
@@ -99,6 +107,42 @@ export default function SearchInterface() {
 
     return () => window.clearInterval(timer);
   }, []);
+
+  const refreshTrends = useCallback(async () => {
+    try {
+      const response = await fetch('/api/search-trends?count=6');
+      if (!response.ok) {
+        throw new Error('failed');
+      }
+      const data = await response.json();
+      if (Array.isArray(data?.records)) {
+        setTrendRecords(data.records as TrendRecord[]);
+      }
+    } catch (error) {
+      console.warn('Trend fetch failed', error);
+    } finally {
+      setTrendLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshTrends();
+  }, [refreshTrends]);
+
+  const logSearch = useCallback(async (term: string) => {
+    try {
+      await fetch('/api/search-trends', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: term })
+      });
+      refreshTrends();
+    } catch (error) {
+      console.warn('Search analytics failed', error);
+    }
+  }, [refreshTrends]);
 
   const telemetryMetrics = useMemo(() => {
     const aggregated = computeExperienceMetrics();
@@ -282,9 +326,9 @@ export default function SearchInterface() {
     }, 0);
   }
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
+  const performSearch = useCallback((query: string) => {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
       setSearchResults([]);
       setActiveSection('');
       setLastQuery('');
@@ -292,8 +336,9 @@ export default function SearchInterface() {
     }
 
     setIsSearching(true);
-    setLastQuery(searchQuery.trim());
-    const queryTokens = tokenize(searchQuery);
+    setLastQuery(normalizedQuery);
+    logSearch(normalizedQuery);
+    const queryTokens = tokenize(normalizedQuery);
 
     const scored = indexedDocuments
       .map((doc) => ({
@@ -310,6 +355,11 @@ export default function SearchInterface() {
       setActiveSection('');
       setIsSearching(false);
     }, 400);
+  }, [indexedDocuments, logSearch]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    performSearch(searchQuery);
   };
 
   const handleSectionSelect = (section: string) => {
@@ -535,11 +585,11 @@ export default function SearchInterface() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              {Object.keys(resumeData.sections).map((section) => (
-                <motion.button
-                  key={section}
-                  onClick={() => handleSectionSelect(section)}
-                  className={`group relative overflow-hidden rounded-2xl border ${
+            {Object.keys(resumeData.sections).map((section) => (
+              <motion.button
+                key={section}
+                onClick={() => handleSectionSelect(section)}
+                className={`group relative overflow-hidden rounded-2xl border ${
                     activeSection === section ? 'border-[#ff2d55]' : 'border-white/10'
                   } bg-white/5 p-4 text-left transition-all duration-300 hover:border-[#ff2d55]/70 hover:bg-[#ff2d55]/15 capitalize`}
                   whileHover={{ y: -4 }}
@@ -553,6 +603,42 @@ export default function SearchInterface() {
                 </motion.button>
               ))}
             </motion.div>
+
+            {!trendLoading && trendRecords.length > 0 && (
+              <motion.div
+                className="space-y-2 pt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.55 }}
+              >
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/50">
+                  <svg
+                    aria-hidden="true"
+                    className="h-3 w-3 text-[#00fff5]"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M3 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h14a1 1 0 1 0 0-2H4V4a1 1 0 0 0-1-1zm4.4 9.2 2.3-3.45 1.7 2.55 2.8-4.2a1 1 0 1 1 1.66 1.1l-3.5 5.25a1 1 0 0 1-1.66 0l-1.76-2.63-1.57 2.35a1 1 0 1 1-1.7-1.17z" />
+                  </svg>
+                  <span>Trending</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {trendRecords.slice(0, 6).map((trend) => (
+                    <button
+                      key={`${trend.query}-${trend.hits}`}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(trend.query);
+                        performSearch(trend.query);
+                      }}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 transition hover:border-[#00fff5]/60 hover:text-[#00fff5]"
+                    >
+                      {trend.query}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </motion.div>
 
           <motion.div
@@ -682,6 +768,26 @@ export default function SearchInterface() {
                   exit={{ opacity: 0 }}
                 >
                   No matches found for “{lastQuery}”. Try different keywords or browse a section.
+                  {!trendLoading && trendRecords.length > 0 && (
+                    <div className="mt-4 text-xs text-white/60">
+                      Trending searches:
+                      <div className="mt-2 flex flex-wrap justify-center gap-2">
+                        {trendRecords.slice(0, 3).map((trend) => (
+                          <button
+                            key={`noresults-${trend.query}`}
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery(trend.query);
+                              performSearch(trend.query);
+                            }}
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 transition hover:border-[#00fff5]/60 hover:text-[#00fff5]"
+                          >
+                            {trend.query}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </motion.div>
