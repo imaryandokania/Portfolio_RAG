@@ -482,7 +482,7 @@ export default function SearchInterface() {
                   <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[#38bdf8]/15 via-transparent to-[#6366f1]/20 blur-xl" />
                   <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#38bdf8]/30" />
                   <div className="pointer-events-none absolute inset-x-6 top-3 flex items-center justify-between text-[11px] uppercase tracking-[0.34em] text-white/40">
-                    <span>Neural Query Console</span>
+                    <span>Query Console</span>
                     <span>Live</span>
                   </div>
                   <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-[#38bdf8]">
@@ -536,7 +536,7 @@ export default function SearchInterface() {
                         <path d="M12 3a9 9 0 0 1 9 9" strokeLinecap="round" />
                       </svg>
                     </motion.span>
-                    <span>{isSearching ? 'Running Inference…' : 'Deploy Query'}</span>
+                    <span>{isSearching ? 'Searching …' : 'Search'}</span>
                   </div>
                 </motion.button>
               </div>

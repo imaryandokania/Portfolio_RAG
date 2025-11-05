@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://aryandokania.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://aryandokania.vercel.app"),
+  metadataBase: new URL(siteUrl),
   title: "Aryan Dokania",
   description:
     "Interactive resume for Aryan Dokania featuring AI-assisted search across experience, projects, and skills.",
@@ -20,13 +23,13 @@ export const metadata: Metadata = {
     title: "Aryan Dokania",
     description:
       "AI-assisted resume experience for Aryan Dokania with searchable projects, experience, and skills.",
-    url: "https://aryandokania.vercel.app",
+    url: siteUrl,
     siteName: "Aryan Dokania",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Aryan Dokania - AI-assisted resume search experience"
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
     title: "Aryan Dokania",
     description:
       "Interactive resume for Aryan Dokania with AI-assisted search over projects, experience, and skills.",
-    images: ["/og-image.png"]
+    images: ["/opengraph-image"]
   },
   icons: {
     icon: "/favicon.ico",
