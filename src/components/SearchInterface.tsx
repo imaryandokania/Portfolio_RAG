@@ -38,7 +38,7 @@ export default function SearchInterface() {
   const [trendRecords, setTrendRecords] = useState<TrendRecord[]>([]);
   const [trendLoading, setTrendLoading] = useState(true);
   const [semanticReady, setSemanticReady] = useState(false);
-  const [semanticLoading, setSemanticLoading] = useState(false);
+  const [semanticLoading, setSemanticLoading] = useState(true);
   const embeddingPipelineRef = useRef<any>(null);
   const [docEmbeddings, setDocEmbeddings] = useState<number[][]>([]);
 
@@ -352,7 +352,9 @@ const indexedDocuments = useMemo<IndexedDocument[]>(() => {
         if (cancelled) {
           return;
         }
-        const featureExtractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        const featureExtractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+          cacheDir: '/models'
+        });
         if (cancelled) {
           return;
         }

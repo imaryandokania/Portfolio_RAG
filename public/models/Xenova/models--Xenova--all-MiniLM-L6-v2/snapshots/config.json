@@ -1,0 +1,9 @@
+{
+  "*": {
+    "processor": "onnx",
+    "file": [
+      "model.onnx",
+      "tokenizer.json"
+    ]
+  }
+}
