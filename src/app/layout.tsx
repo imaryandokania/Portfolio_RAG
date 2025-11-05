@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Aryan Dokania - AI-assisted resume search experience"
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     title: "Aryan Dokania",
     description:
       "Interactive resume for Aryan Dokania with AI-assisted search over projects, experience, and skills.",
-    images: ["/opengraph-image"]
+    images: ["/og-image.png"]
   },
   icons: {
     icon: "/favicon.ico",
