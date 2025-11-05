@@ -21,7 +21,7 @@ export default function SearchInterface() {
   const [activeSection, setActiveSection] = useState('');
   const [searchResults, setSearchResults] = useState<ResumeDocument[]>([]);
   const [lastQuery, setLastQuery] = useState('');
-  const [scanTick, setScanTick] = useState(0);
+  const [missionTime, setMissionTime] = useState(() => new Date());
 
   const contactEntries = useMemo(
     () => [
@@ -79,6 +79,77 @@ export default function SearchInterface() {
     ];
   }, []);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setMissionTime(new Date());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const monthMap: Record<string, number> = {
+    jan: 0,
+    january: 0,
+    feb: 1,
+    february: 1,
+    mar: 2,
+    march: 2,
+    apr: 3,
+    april: 3,
+    may: 4,
+    jun: 5,
+    june: 5,
+    jul: 6,
+    july: 6,
+    aug: 7,
+    august: 7,
+    sep: 8,
+    sept: 8,
+    september: 8,
+    oct: 9,
+    october: 9,
+    nov: 10,
+    november: 10,
+    dec: 11,
+    december: 11
+  };
+
+  function parseDatePart(part: string) {
+    const cleaned = part.replace(/\s+/g, ' ').trim();
+    if (!cleaned) {
+      return undefined;
+    }
+    if (/present/i.test(cleaned)) {
+      return new Date();
+    }
+    const monthMatch = cleaned.match(/[A-Za-z]+/);
+    const yearMatch = cleaned.match(/(19|20)\d{2}/);
+    if (!monthMatch || !yearMatch) {
+      return undefined;
+    }
+    const key = monthMatch[0].replace('.', '').toLowerCase();
+    const monthIndex = monthMap[key];
+    if (typeof monthIndex !== 'number') {
+      return undefined;
+    }
+    const year = parseInt(yearMatch[0], 10);
+    return new Date(year, monthIndex, 1);
+  }
+
+  function monthsBetween(period: string) {
+    const [startPart, endPart] = period.split('-').map((segment) => segment.trim());
+    const start = parseDatePart(startPart);
+    const end = parseDatePart(endPart ?? startPart);
+    if (!start || !end) {
+      return 0;
+    }
+    const startYear = start.getFullYear();
+    const startMonth = start.getMonth();
+    const endYear = end.getFullYear();
+    const endMonth = end.getMonth();
+    return (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+  }
+
   const missionClock = useMemo(() => {
     const formatter = new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
@@ -87,42 +158,92 @@ export default function SearchInterface() {
       hour12: false,
       timeZoneName: 'short'
     });
-    return formatter.format(new Date());
-  }, [scanTick]);
+    return formatter.format(missionTime);
+  }, [missionTime]);
 
-  const statusReadings = useMemo(() => {
-    const neuralSync = 92 + ((scanTick * 3) % 7);
-    const signal = 78 + (scanTick % 18);
-    const coherence = 85 + ((scanTick * 2) % 10);
-    const latency = (Math.sin(scanTick / 5) + 1.2).toFixed(2);
+  const telemetryMetrics = useMemo(() => {
+    const experiences = resumeData.sections.experience ?? [];
+    const projects = resumeData.sections.projects ?? [];
+    const skills = resumeData.sections.skills;
+
+    const experienceMonths = experiences.reduce((total, role) => total + monthsBetween(role.period), 0);
+    const experienceYears = experienceMonths / 12;
+    const experienceScore = Math.max(20, Math.min(100, Math.round((experienceMonths / 60) * 100)));
+
+    const mlKeywords = [
+      'ml',
+      'machine learning',
+      'ai',
+      'llm',
+      'rag',
+      'meta-learning',
+      'meta learning',
+      'optimizer',
+      'embedding',
+      'embeddings',
+      'pytorch',
+      'tensor',
+      'faiss',
+      'classifier',
+      'language model',
+      'sbert',
+      'sb bert',
+      'llama'
+    ];
+
+    const textSegments: string[] = [];
+    experiences.forEach((item) => {
+      textSegments.push(item.title, item.company, ...(item.points ?? []));
+    });
+    projects.forEach((project) => {
+      textSegments.push(project.title, ...(project.points ?? []));
+    });
+
+    const mlMentions = textSegments.reduce((count, text) => {
+      const lower = text.toLowerCase();
+      return count + (mlKeywords.some((keyword) => lower.includes(keyword)) ? 1 : 0);
+    }, 0);
+    const aiCoverage = textSegments.length ? mlMentions / textSegments.length : 0;
+    const aiScore = Math.max(25, Math.min(100, Math.round(aiCoverage * 130)));
+
+    const cloudToolCount =
+      skills?.cloudTools?.length ?? 0;
+    const cloudScore = Math.max(30, Math.min(100, Math.round((cloudToolCount / 10) * 100)));
+
+    const projectPoints = projects.reduce((total, project) => total + (project.points?.length ?? 0), 0);
+    const projectScore = Math.max(25, Math.min(100, Math.round((projectPoints / 12) * 100)));
 
     return [
       {
-        label: 'Neural Sync',
-        value: `${neuralSync}%`,
-        detail: 'vector coherence',
+        label: 'AI Systems Index',
+        value: `${aiScore}`,
+        suffix: '/100',
+        detail: `${mlMentions} ML-specific highlights across roles & projects`,
         accent: '#00fff5'
       },
       {
-        label: 'Signal Strength',
-        value: `${signal}%`,
-        detail: 'uplink integrity',
+        label: 'Experience Depth',
+        value: `${experienceScore}`,
+        suffix: '/100',
+        detail: `${experienceYears.toFixed(1)} yrs (${experienceMonths} months) of hands-on work`,
         accent: '#ff2d55'
       },
       {
-        label: 'Inference Coherence',
-        value: `${coherence}%`,
-        detail: 'context alignment',
+        label: 'Cloud Coverage',
+        value: `${cloudScore}`,
+        suffix: '/100',
+        detail: `${cloudToolCount} cloud & platform tools tracked`,
         accent: '#b026ff'
       },
       {
-        label: 'Latency',
-        value: `${latency} ms`,
-        detail: 'edge response',
+        label: 'Project Velocity',
+        value: `${projectScore}`,
+        suffix: '/100',
+        detail: `${projectPoints} impactful project bullet points`,
         accent: '#f5f3ff'
       }
     ];
-  }, [scanTick]);
+  }, []);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -567,7 +688,7 @@ export default function SearchInterface() {
               }}
             />
             <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {statusReadings.map((metric) => (
+              {telemetryMetrics.map((metric) => (
                 <motion.div
                   key={metric.label}
                   className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-4 backdrop-blur-xl"
@@ -581,8 +702,11 @@ export default function SearchInterface() {
                   />
                   <div className="relative space-y-2">
                     <p className="text-xs uppercase tracking-[0.35em] text-white/60">{metric.label}</p>
-                    <p className="text-2xl font-semibold" style={{ color: metric.accent }}>
-                      {metric.value}
+                    <p className="flex items-baseline gap-1 text-2xl font-semibold" style={{ color: metric.accent }}>
+                      <span>{metric.value}</span>
+                      {metric.suffix && (
+                        <span className="text-sm text-white/60">{metric.suffix}</span>
+                      )}
                     </p>
                     <p className="text-xs text-white/50">{metric.detail}</p>
                   </div>
