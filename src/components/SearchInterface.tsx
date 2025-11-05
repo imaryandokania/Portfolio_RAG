@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resumeData } from '../data/resumeData';
 import { computeExperienceMetrics } from '../utils/resumeMetrics';
@@ -15,6 +15,11 @@ type ResumeDocument = {
   content?: string;
   points?: string[];
   link?: string;
+};
+
+type IndexedDocument = ResumeDocument & {
+  tokens: string[];
+  rawText: string;
 };
 
 type TrendRecord = {
@@ -32,6 +37,10 @@ export default function SearchInterface() {
   const [missionClock, setMissionClock] = useState('--:--:--');
   const [trendRecords, setTrendRecords] = useState<TrendRecord[]>([]);
   const [trendLoading, setTrendLoading] = useState(true);
+  const [semanticReady, setSemanticReady] = useState(false);
+  const [semanticLoading, setSemanticLoading] = useState(false);
+  const embeddingPipelineRef = useRef<any>(null);
+  const [docEmbeddings, setDocEmbeddings] = useState<number[][]>([]);
 
   const contactEntries = useMemo(
     () => [
@@ -125,9 +134,9 @@ export default function SearchInterface() {
     }
   }, []);
 
-  useEffect(() => {
-    refreshTrends();
-  }, [refreshTrends]);
+useEffect(() => {
+  refreshTrends();
+}, [refreshTrends]);
 
   const logSearch = useCallback(async (term: string) => {
     try {
@@ -185,6 +194,24 @@ export default function SearchInterface() {
       .replace(/[^a-z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter(Boolean);
+  }
+
+  function cosineSimilarity(a: number[], b: number[]) {
+    if (!a.length || !b.length || a.length !== b.length) {
+      return 0;
+    }
+    let dot = 0;
+    let magA = 0;
+    let magB = 0;
+    for (let i = 0; i < a.length; i += 1) {
+      dot += a[i] * b[i];
+      magA += a[i] * a[i];
+      magB += b[i] * b[i];
+    }
+    if (!magA || !magB) {
+      return 0;
+    }
+    return dot / (Math.sqrt(magA) * Math.sqrt(magB));
   }
 
   function buildDocuments(): ResumeDocument[] {
@@ -289,11 +316,11 @@ export default function SearchInterface() {
     return docs;
   }
 
-  const indexedDocuments = useMemo(() => {
-    const docs = buildDocuments();
-    return docs.map((doc) => {
-      const aggregateText = [
-        doc.title,
+const indexedDocuments = useMemo<IndexedDocument[]>(() => {
+  const docs = buildDocuments();
+  return docs.map((doc) => {
+    const aggregateText = [
+      doc.title,
         doc.subtitle,
         doc.content,
         doc.points?.join(' ')
@@ -303,11 +330,65 @@ export default function SearchInterface() {
 
       return {
         ...doc,
-        tokens: tokenize(aggregateText)
+        tokens: tokenize(aggregateText),
+        rawText: aggregateText
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function initialiseSemanticSearch() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+      if (semanticReady || semanticLoading) {
+        return;
+      }
+      setSemanticLoading(true);
+      try {
+        const { pipeline } = await import('@xenova/transformers');
+        if (cancelled) {
+          return;
+        }
+        const featureExtractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        if (cancelled) {
+          return;
+        }
+        embeddingPipelineRef.current = featureExtractor;
+
+        const embeddings: number[][] = [];
+        for (const doc of indexedDocuments) {
+          const text = doc.rawText || doc.title;
+          const output = await featureExtractor(text, {
+            pooling: 'mean',
+            normalize: true
+          });
+          if (cancelled) {
+            return;
+          }
+          const vector = Array.from(output.data as Float32Array);
+          embeddings.push(vector);
+        }
+        if (!cancelled) {
+          setDocEmbeddings(embeddings);
+          setSemanticReady(true);
+        }
+      } catch (error) {
+        console.warn('Semantic search initialisation failed', error);
+      } finally {
+        if (!cancelled) {
+          setSemanticLoading(false);
+        }
+      }
+    }
+    initialiseSemanticSearch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [indexedDocuments, semanticReady, semanticLoading]);
 
   const primaryEducation = resumeData.sections.education?.[0];
 
@@ -326,7 +407,7 @@ export default function SearchInterface() {
     }, 0);
   }
 
-  const performSearch = useCallback((query: string) => {
+  const performSearch = useCallback(async (query: string) => {
     const normalizedQuery = query.trim();
     if (!normalizedQuery) {
       setSearchResults([]);
@@ -338,28 +419,62 @@ export default function SearchInterface() {
     setIsSearching(true);
     setLastQuery(normalizedQuery);
     logSearch(normalizedQuery);
-    const queryTokens = tokenize(normalizedQuery);
 
-    const scored = indexedDocuments
-      .map((doc) => ({
-        ...doc,
-        score: scoreDocument(queryTokens, doc.tokens)
-      }))
-      .filter((doc) => doc.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 12)
-      .map(({ tokens, score, ...rest }) => rest);
+    let results: ResumeDocument[] = [];
+
+    if (
+      semanticReady &&
+      docEmbeddings.length === indexedDocuments.length &&
+      embeddingPipelineRef.current
+    ) {
+      try {
+        const semanticOutput = await embeddingPipelineRef.current(normalizedQuery, {
+          pooling: 'mean',
+          normalize: true
+        });
+        const queryVector = Array.from(semanticOutput.data as Float32Array);
+        const semanticRanking = docEmbeddings
+          .map((vector, idx) => ({
+            doc: indexedDocuments[idx],
+            score: cosineSimilarity(vector, queryVector)
+          }))
+          .filter(({ score }) => score > 0.18)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 12)
+          .map(({ doc }) => {
+            const { tokens, rawText, ...rest } = doc;
+            return rest;
+          });
+
+        results = semanticRanking;
+      } catch (error) {
+        console.warn('Semantic search failed, falling back to keyword', error);
+      }
+    }
+
+    if (!results.length) {
+      const queryTokens = tokenize(normalizedQuery);
+      results = indexedDocuments
+        .map((doc) => ({
+          ...doc,
+          score: scoreDocument(queryTokens, doc.tokens)
+        }))
+        .filter((doc) => doc.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 12)
+        .map(({ tokens, rawText, score, ...rest }) => rest);
+    }
 
     setTimeout(() => {
-      setSearchResults(scored);
+      setSearchResults(results);
       setActiveSection('');
       setIsSearching(false);
     }, 400);
-  }, [indexedDocuments, logSearch]);
+  }, [docEmbeddings, indexedDocuments, logSearch, semanticReady]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    performSearch(searchQuery);
+    void performSearch(searchQuery);
   };
 
   const handleSectionSelect = (section: string) => {
@@ -604,6 +719,25 @@ export default function SearchInterface() {
               ))}
             </motion.div>
 
+            <div className="flex items-center gap-2 text-xs text-white/60">
+              <span
+                className={`inline-flex h-2 w-2 rounded-full ${
+                  semanticReady
+                    ? 'bg-[#00fff5]'
+                    : semanticLoading
+                      ? 'bg-[#ff2d55] animate-pulse'
+                      : 'bg-white/30'
+                }`}
+              />
+              <span>
+                {semanticReady
+                  ? 'Semantic search active'
+                  : semanticLoading
+                    ? 'Loading semantic search model…'
+                    : 'Falling back to keyword search'}
+              </span>
+            </div>
+
             {!trendLoading && trendRecords.length > 0 && (
               <motion.div
                 className="space-y-2 pt-2"
@@ -627,10 +761,10 @@ export default function SearchInterface() {
                     <button
                       key={`${trend.query}-${trend.hits}`}
                       type="button"
-                      onClick={() => {
-                        setSearchQuery(trend.query);
-                        performSearch(trend.query);
-                      }}
+                    onClick={() => {
+                      setSearchQuery(trend.query);
+                      void performSearch(trend.query);
+                    }}
                       className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 transition hover:border-[#00fff5]/60 hover:text-[#00fff5]"
                     >
                       {trend.query}
@@ -778,7 +912,7 @@ export default function SearchInterface() {
                             type="button"
                             onClick={() => {
                               setSearchQuery(trend.query);
-                              performSearch(trend.query);
+                              void performSearch(trend.query);
                             }}
                             className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 transition hover:border-[#00fff5]/60 hover:text-[#00fff5]"
                           >
