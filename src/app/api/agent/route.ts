@@ -1,0 +1,190 @@
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
+import {
+  buildResumeContext,
+  buildResumeDocuments,
+  ResumeDocument,
+} from "../../../utils/resumeDocuments";
+
+const EMBEDDING_MODEL = "text-embedding-3-small";
+const CHAT_MODEL = "gpt-4o-mini";
+const MAX_CONTEXT_DOCUMENTS = 6;
+const MAX_QUERY_CHARS = 500;
+
+const docs = buildResumeDocuments();
+let cachedEmbeddings: number[][] | null = null;
+
+function getClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("Missing OPENAI_API_KEY environment variable.");
+  }
+
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a.length || !b.length || a.length !== b.length) {
+    return 0;
+  }
+
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+
+  for (let i = 0; i < a.length; i += 1) {
+    const ai = a[i];
+    const bi = b[i];
+    dot += ai * bi;
+    magA += ai * ai;
+    magB += bi * bi;
+  }
+
+  if (!magA || !magB) {
+    return 0;
+  }
+
+  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
+}
+
+async function ensureEmbeddings(client: OpenAI): Promise<number[][]> {
+  if (cachedEmbeddings) {
+    return cachedEmbeddings;
+  }
+
+  const inputs = docs.map((doc) => buildResumeContext(doc));
+  const response = await client.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: inputs,
+  });
+
+  cachedEmbeddings = response.data.map((item) => item.embedding);
+  return cachedEmbeddings;
+}
+
+type RankedDoc = {
+  doc: ResumeDocument;
+  embedding: number[];
+  similarity: number;
+};
+
+function buildContextSection(topDocs: RankedDoc[]): string {
+  return topDocs
+    .map((entry, index) => {
+      const { doc } = entry;
+      const chunks: string[] = [
+        `Document ${index + 1}:`,
+        `Section: ${doc.section}`,
+        `Title: ${doc.title}`,
+      ];
+
+      if (doc.subtitle) {
+        chunks.push(`Subtitle: ${doc.subtitle}`);
+      }
+
+      if (doc.content) {
+        chunks.push(`Content: ${doc.content}`);
+      }
+
+      if (doc.points?.length) {
+        chunks.push(`Points:\n- ${doc.points.join("\n- ")}`);
+      }
+
+      return chunks.join("\n");
+    })
+    .join("\n\n");
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const client = getClient();
+    const { query } = (await request.json()) as { query?: string };
+
+    if (!query || !query.trim()) {
+      return NextResponse.json(
+        { error: "Query is required." },
+        { status: 400 }
+      );
+    }
+
+    if (query.length > MAX_QUERY_CHARS) {
+      return NextResponse.json(
+        {
+          error: `Query is too long. Please stay under ${MAX_QUERY_CHARS} characters.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const docEmbeddings = await ensureEmbeddings(client);
+
+    const queryEmbeddingResponse = await client.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: query,
+    });
+
+    const queryEmbedding = queryEmbeddingResponse.data[0]?.embedding ?? [];
+
+    const rankedDocs: RankedDoc[] = docs
+      .map((doc, index) => ({
+        doc,
+        embedding: docEmbeddings[index],
+        similarity: cosineSimilarity(queryEmbedding, docEmbeddings[index]),
+      }))
+      .filter((entry) => entry.similarity > 0)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, MAX_CONTEXT_DOCUMENTS);
+
+    if (!rankedDocs.length) {
+      return NextResponse.json({
+        answer:
+          "I could not find relevant information in the resume. Could you try rephrasing your question?",
+        sources: [],
+      });
+    }
+
+    const context = buildContextSection(rankedDocs);
+
+    const completion = await client.chat.completions.create({
+      model: CHAT_MODEL,
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI agent that answers questions about Aryan Dokania's resume. Use only the provided context. Respond concisely and reference specific experiences when helpful.",
+        },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nQuestion: ${query}`,
+        },
+      ],
+    });
+
+    const answer = completion.choices[0]?.message?.content?.trim();
+
+  return NextResponse.json({
+    answer:
+      answer ??
+      "I could not generate an answer right now. Please try again shortly.",
+    sources: rankedDocs.map(({ doc, similarity }) => ({
+      id: doc.id,
+      title: doc.title,
+      section: doc.section,
+      similarity,
+    })),
+  });
+  } catch (error) {
+    console.error("Error in agent route:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process your request.",
+      },
+      { status: 500 }
+    );
+  }
+}

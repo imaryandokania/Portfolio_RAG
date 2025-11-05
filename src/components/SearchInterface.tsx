@@ -2,27 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { resumeData } from '../data/resumeData';
 import { computeExperienceMetrics } from '../utils/resumeMetrics';
 import SkillClusterBars from './SkillClusterBars';
 import CyberBackground from './CyberBackground';
 
-type ResumeDocument = {
-  id: string;
-  section: string;
-  title: string;
-  subtitle?: string;
-  content?: string;
-  points?: string[];
-  link?: string;
-};
-
-
 export default function SearchInterface() {
+  const MAX_QUERY_CHARS = 500;
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
-  const [searchResults, setSearchResults] = useState<ResumeDocument[]>([]);
+  const [agentAnswer, setAgentAnswer] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState('');
   const [missionClock, setMissionClock] = useState('--:--:--');
 
@@ -180,215 +173,67 @@ export default function SearchInterface() {
     ];
   }, []);
 
-  function tokenize(text: string) {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter(Boolean);
-  }
-
-  function cosineSimilarity(a: number[], b: number[]) {
-    if (!a.length || !b.length || a.length !== b.length) {
-      return 0;
-    }
-    let dot = 0;
-    let magA = 0;
-    let magB = 0;
-    for (let i = 0; i < a.length; i += 1) {
-      dot += a[i] * b[i];
-      magA += a[i] * a[i];
-      magB += b[i] * b[i];
-    }
-    if (!magA || !magB) {
-      return 0;
-    }
-    return dot / (Math.sqrt(magA) * Math.sqrt(magB));
-  }
-
-  function buildDocuments(): ResumeDocument[] {
-    const docs: ResumeDocument[] = [];
-    const { sections } = resumeData;
-
-    if (sections.summary) {
-      sections.summary.forEach((line, index) => {
-        docs.push({
-          id: `summary-${index}`,
-          section: 'summary',
-          title: 'Professional Summary',
-          content: line
-        });
-      });
-    }
-
-    sections.education?.forEach((item, index) => {
-      docs.push({
-        id: `education-${index}`,
-        section: 'education',
-        title: item.university,
-        subtitle: `${item.location} | ${item.period}`,
-        content: `${item.degree}${item.gpa ? ` | ${item.gpa}` : ''}`
-      });
-    });
-
-    sections.experience?.forEach((item, index) => {
-      docs.push({
-        id: `experience-${index}`,
-        section: 'experience',
-        title: `${item.company} — ${item.title}`,
-        subtitle: `${item.location} | ${item.period}`,
-        points: item.points
-      });
-    });
-
-    sections.projects?.forEach((item, index) => {
-      docs.push({
-        id: `projects-${index}`,
-        section: 'projects',
-        title: item.title,
-        subtitle: item.technologies?.join(', '),
-        content: item.link,
-        points: item.points
-      });
-    });
-
-    if (sections.skills) {
-      const { languages, mlAi, cloudTools, certifications, coursework } = sections.skills;
-
-      docs.push({
-        id: 'skills-languages',
-        section: 'skills',
-        title: 'Programming Languages',
-        points: languages
-      });
-
-      docs.push({
-        id: 'skills-ml',
-        section: 'skills',
-        title: 'ML & AI',
-        points: mlAi
-      });
-
-      docs.push({
-        id: 'skills-cloud',
-        section: 'skills',
-        title: 'Cloud & Tools',
-        points: cloudTools
-      });
-
-      docs.push({
-        id: 'skills-coursework',
-        section: 'skills',
-        title: 'Coursework',
-        points: coursework
-      });
-
-      if (certifications) {
-        docs.push({
-          id: 'skills-certifications',
-          section: 'skills',
-          title: 'Certifications',
-          points: certifications.map((cert) =>
-            cert.link ? `${cert.name} (${cert.link})` : cert.name
-          )
-        });
+  const queryAgent = useCallback(
+    async (query: string) => {
+      const normalizedQuery = query.trim();
+      if (!normalizedQuery) {
+        setIsSearching(false);
+        setAgentAnswer('');
+        setLastQuery('');
+        setError(null);
+        return;
       }
-    }
 
-    sections.achievements?.forEach((item, index) => {
-      docs.push({
-        id: `achievements-${index}`,
-        section: 'achievements',
-        title: item.title,
-        content: item.description,
-        points: item.links
-      });
-    });
-
-    return docs;
-  }
-
-  const indexedDocuments = useMemo(() => {
-    const docs = buildDocuments();
-    return docs.map((doc) => {
-      const aggregateText = [
-        doc.title,
-        doc.subtitle,
-        doc.content,
-        doc.points?.join(' ')
-      ]
-        .filter(Boolean)
-        .join(' ');
-
-      return {
-        ...doc,
-        tokens: tokenize(aggregateText)
-      };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function scoreDocument(queryTokens: string[], docTokens: string[]) {
-    if (!queryTokens.length || !docTokens.length) {
-      return 0;
-    }
-
-    const docFrequency = docTokens.reduce<Record<string, number>>((acc, token) => {
-      acc[token] = (acc[token] || 0) + 1;
-      return acc;
-    }, {});
-
-    return queryTokens.reduce((score, token) => {
-      return score + (docFrequency[token] || 0);
-    }, 0);
-  }
-
-  const performSearch = useCallback((query: string) => {
-    const normalizedQuery = query.trim();
-    if (!normalizedQuery) {
-      setSearchResults([]);
+      setIsSearching(true);
       setActiveSection('');
-      setLastQuery('');
-      return;
-    }
+      setAgentAnswer('');
+      setError(null);
+      setLastQuery(normalizedQuery);
 
-    setIsSearching(true);
-    setLastQuery(normalizedQuery);
+      try {
+        if (normalizedQuery.length > MAX_QUERY_CHARS) {
+          throw new Error(`Query is too long. Please stay under ${MAX_QUERY_CHARS} characters.`);
+        }
 
-    const queryTokens = tokenize(normalizedQuery);
-    const results = indexedDocuments
-      .map((doc) => ({
-        ...doc,
-        score: scoreDocument(queryTokens, doc.tokens)
-      }))
-      .filter((doc) => doc.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 12)
-      .map(({ tokens, ...rest }) => rest);
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: normalizedQuery })
+        });
 
-    setTimeout(() => {
-      setSearchResults(results);
-      setActiveSection('');
-      setIsSearching(false);
-    }, 400);
-  }, [indexedDocuments]);
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? 'Failed to query the AI agent.');
+        }
+
+        const payload = (await response.json()) as {
+          answer?: string;
+        };
+
+        setAgentAnswer(payload.answer ?? '');
+      } catch (err) {
+        console.error('Agent query failed', err);
+        setAgentAnswer('');
+        setError(err instanceof Error ? err.message : 'Unable to query the AI agent.');
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    []
+  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    void performSearch(searchQuery);
+    void queryAgent(searchQuery);
   };
 
   const handleSectionSelect = (section: string) => {
+    const prompt = `Summarize the ${section} section from Aryan Dokania's resume.`;
     setActiveSection(section);
-    setSearchQuery('');
-    setIsSearching(false);
-
-    const filtered = indexedDocuments
-      .filter((doc) => doc.section === section)
-      .map(({ tokens, ...rest }) => rest);
-
-    setSearchResults(filtered);
-    setLastQuery('');
+    setSearchQuery(prompt);
+    void queryAgent(prompt);
   };
 
   return (
@@ -555,6 +400,82 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
+          {(isSearching || (!isSearching && agentAnswer)) && (
+            <motion.div
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(0,255,245,0.08)]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.48 }}
+            >
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.16),_transparent_65%)]" />
+              <AnimatePresence mode="popLayout" initial={false}>
+                {isSearching ? (
+                  <motion.div
+                    key="searching"
+                    className="relative flex flex-col items-center gap-4 py-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <div className="text-[#00fff5] animate-pulse text-xl">Scanning neural network...</div>
+                    <div className="w-full h-1 bg-black/30 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-[#ff2d55]"
+                        initial={{ width: '0%' }}
+                        animate={{ width: '100%' }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      />
+                    </div>
+                  </motion.div>
+                ) : (
+                  agentAnswer && (
+                    <motion.div
+                      key="answer"
+                      className="relative flex flex-col gap-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <span className="rounded-full border border-[#00fff5]/40 bg-[#00fff5]/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#00fff5] w-fit">
+                        Agent Response
+                      </span>
+                      {lastQuery && (
+                        <p className="text-xs uppercase tracking-[0.25em] text-white/40">
+                          Query: “{lastQuery}”
+                        </p>
+                      )}
+                      <div className="text-white/80 text-sm md:text-base leading-relaxed">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            strong: ({ node, ...props }) => (
+                              <span className="text-white font-semibold" {...props} />
+                            ),
+                            em: ({ node, ...props }) => (
+                              <span className="italic text-white/80" {...props} />
+                            ),
+                            p: ({ node, ...props }) => (
+                              <p className="mb-3 last:mb-0" {...props} />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul className="list-disc pl-5 space-y-2" {...props} />
+                            ),
+                            ol: ({ node, ...props }) => (
+                              <ol className="list-decimal pl-5 space-y-2" {...props} />
+                            ),
+                            li: ({ node, ...props }) => <li className="pl-1" {...props} />
+                          }}
+                        >
+                          {agentAnswer}
+                        </ReactMarkdown>
+                      </div>
+                    </motion.div>
+                  )
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
           {/* Search Panel */}
           <motion.div
             className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(176,38,255,0.08)]"
@@ -584,8 +505,8 @@ export default function SearchInterface() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(0,255,245,0.05)]
-                    focus:outline-none focus:ring-2 focus:ring-[#ff2d55] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300"
-                    placeholder="Query the neural archive (skills, experience, projects...)"
+                    focus:outline-none focus:ring-2 focus:ring-[#ff2d55] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-center"
+                    placeholder="What do you want to know about Aryan?"
                   />
                 </div>
                 <motion.button
@@ -675,7 +596,7 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          {searchResults.length === 0 && !activeSection && !searchQuery && (
+          {!agentAnswer && !error && !isSearching && !searchQuery && (
             <motion.div
               className="space-y-6"
               initial={{ opacity: 0, y: 15 }}
@@ -689,75 +610,25 @@ export default function SearchInterface() {
           {/* Results Area */}
           <AnimatePresence>
             <motion.div className="mt-8 space-y-4">
-              {isSearching && (
-                <motion.div 
-                  className="text-center"
+              {!isSearching && error && (
+                <motion.div
+                  className="text-center text-[#ff2d55]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <div className="text-[#00fff5] animate-pulse text-xl">
-                    Scanning neural network...
-                  </div>
-                  <div className="mt-4 h-1 bg-black/30 rounded-full overflow-hidden">
-                    <motion.div 
-                      className="h-full bg-[#ff2d55]"
-                      initial={{ width: "0%" }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    />
-                  </div>
+                  {error}
                 </motion.div>
               )}
 
-              {searchResults.map((result, idx) => (
-                <motion.div
-                  key={idx}
-                  className="group relative overflow-hidden rounded-3xl border border-white/10 bg-black/60 p-6 backdrop-blur-xl transition-all duration-300 hover:border-[#00fff5]/60 hover:bg-[#00fff5]/10"
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -24 }}
-                  transition={{ delay: idx * 0.06 }}
-                >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.18),_transparent_60%)]" />
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="rounded-full border border-[#00fff5]/40 bg-[#00fff5]/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-[#00fff5]">
-                        {result.section}
-                      </span>
-                      <h3 className="text-[#ff2d55] text-xl font-semibold">
-                        {result.title || result.section}
-                      </h3>
-                    </div>
-                    {result.subtitle && (
-                      <p className="text-[#00fff5] text-sm md:text-base">{result.subtitle}</p>
-                    )}
-                    {result.content && (
-                      <p className="text-white/80 text-sm md:text-base leading-relaxed break-words">
-                        {result.content}
-                      </p>
-                    )}
-                    {result.points && result.points.length > 0 && (
-                      <ul className="grid gap-2 text-white/80 text-sm md:text-base">
-                        {result.points.map((point, i) => (
-                          <li key={i} className="relative pl-4 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-[#ff2d55]">
-                            {point}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-
-              {lastQuery && !isSearching && searchResults.length === 0 && (
+              {lastQuery && !isSearching && !agentAnswer && !error && (
                 <motion.div 
                   className="text-center text-[#ff2d55]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  No matches found for “{lastQuery}”. Try different keywords or browse a section.
+                  The agent could not synthesize an answer. Try rephrasing or asking about another part of the resume.
                 </motion.div>
               )}
             </motion.div>
