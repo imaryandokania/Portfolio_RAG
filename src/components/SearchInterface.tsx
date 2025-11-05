@@ -89,10 +89,21 @@ export default function SearchInterface() {
     if (!skills) {
       return [];
     }
+    const languageHighlight = (() => {
+      const langs = skills.languages ?? [];
+      const selection = langs.slice(0, 4);
+      if (langs.includes('Python') && !selection.includes('Python')) {
+        if (selection.length >= 4) {
+          selection.pop();
+        }
+        selection.push('Python');
+      }
+      return selection;
+    })();
     return [
       {
         label: 'Languages',
-        items: skills.languages?.slice(0, 4) ?? []
+        items: languageHighlight
       },
       {
         label: 'ML & AI',
