@@ -40,7 +40,7 @@ export default function SearchInterface() {
         value: 'aryandokania',
         href: `https://${resumeData.contact.linkedin}`,
         icon: (
-          <svg className="h-4 w-4 text-[#00fff5]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M4.98 3.5a2.5 2.5 0 1 1-.01 5 2.5 2.5 0 0 1 .01-5ZM3 9h3.95v12H3zM10.5 9H14v1.64h.05c.49-.93 1.69-1.91 3.48-1.91 3.72 0 4.41 2.45 4.41 5.64V21H18V15.1c0-1.4-.03-3.21-2-3.21-2 0-2.31 1.56-2.31 3.09V21h-3.95z" />
           </svg>
         )
@@ -50,7 +50,7 @@ export default function SearchInterface() {
         value: 'imaryandokania',
         href: `https://${resumeData.contact.github}`,
         icon: (
-          <svg className="h-4 w-4 text-[#00fff5]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.69-3.88-1.54-3.88-1.54-.53-1.36-1.3-1.72-1.3-1.72-1.06-.73.08-.72.08-.72 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.74 1.27 3.41.97.1-.76.41-1.27.75-1.56-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.29 1.19-3.1-.12-.3-.52-1.52.11-3.17 0 0 .98-.31 3.21 1.18a11.1 11.1 0 0 1 2.92-.39c.99 0 1.99.13 2.92.39 2.22-1.49 3.2-1.18 3.2-1.18.64 1.65.24 2.87.12 3.17.74.81 1.19 1.84 1.19 3.1 0 4.41-2.69 5.38-5.25 5.66.42.36.8 1.08.8 2.17 0 1.57-.02 2.83-.02 3.22 0 .31.21.67.79.56A10.52 10.52 0 0 0 23.5 12c0-6.35-5.15-11.5-11.5-11.5Z" />
           </svg>
         )
@@ -147,28 +147,28 @@ export default function SearchInterface() {
         value: `${aggregated.aiScore}`,
         suffix: '/100',
         detail: `${aggregated.mlMentions} ML-specific highlights across roles & projects`,
-        accent: '#00fff5'
+        accent: '#38bdf8'
       },
       {
         label: 'Experience Depth',
         value: `${aggregated.experienceScore}`,
         suffix: '/100',
         detail: `${aggregated.experienceYears.toFixed(1)} yrs (${aggregated.experienceMonths} months) of hands-on work`,
-        accent: '#b026ff'
+        accent: '#a855f7'
       },
       {
         label: 'Cloud Coverage',
         value: `${aggregated.cloudScore}`,
         suffix: '/100',
         detail: `${aggregated.cloudToolCount} tools · ${aggregated.cloudMentions} infra mentions`,
-        accent: '#00b3ff'
+        accent: '#0ea5e9'
       },
       {
         label: 'Project Velocity',
         value: `${aggregated.projectScore}`,
         suffix: '/100',
         detail: `${aggregated.projectPoints} impactful project bullet points`,
-        accent: '#f5f3ff'
+        accent: '#f3e8ff'
       }
     ];
   }, []);
@@ -240,13 +240,13 @@ export default function SearchInterface() {
     <div className="relative">
       <CyberBackground />
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.18),_transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(255,45,85,0.15),_transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(99,102,241,0.15),_transparent_60%)]" />
         <div
           className="absolute inset-0 opacity-20 mix-blend-screen"
           style={{
             backgroundImage:
-              'linear-gradient(90deg, rgba(0, 255, 245, 0.15) 1px, transparent 1px), linear-gradient(0deg, rgba(176, 38, 255, 0.12) 1px, transparent 1px)',
+              'linear-gradient(90deg, rgba(56, 189, 248, 0.15) 1px, transparent 1px), linear-gradient(0deg, rgba(168, 85, 247, 0.12) 1px, transparent 1px)',
             backgroundSize: '120px 120px'
           }}
         />
@@ -260,18 +260,18 @@ export default function SearchInterface() {
         >
           {/* Hero */}
           <motion.div
-            className="relative overflow-hidden rounded-3xl border border-[#00fff5]/30 bg-black/50 backdrop-blur-xl shadow-[0_0_45px_rgba(0,255,245,0.1)]"
+            className="relative overflow-hidden rounded-3xl border border-[#38bdf8]/30 bg-black/50 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.1)]"
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1, duration: 0.6 }}
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.12),_transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(176,38,255,0.18),_transparent_55%)] mix-blend-screen" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(168,85,247,0.18),_transparent_55%)] mix-blend-screen" />
             <div className="grid gap-8 lg:grid-cols-[1.3fr_0.9fr] relative p-8 lg:p-12">
               <div className="space-y-6">
                 <div className="text-left space-y-4">
                   <motion.div 
-                    className="flex w-fit items-center gap-2 rounded-full border border-[#00fff5]/50 bg-black/60 px-4 py-2 text-sm uppercase tracking-widest text-[#00fff5]"
+                    className="flex w-fit items-center gap-2 rounded-full border border-[#38bdf8]/50 bg-black/60 px-4 py-2 text-sm uppercase tracking-widest text-[#38bdf8]"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -288,7 +288,7 @@ export default function SearchInterface() {
                   </motion.h1>
                   {heroEducation && (
                     <motion.p 
-                      className="text-[#00fff5] text-lg md:text-xl"
+                      className="text-[#38bdf8] text-lg md:text-xl"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 }}
@@ -320,10 +320,10 @@ export default function SearchInterface() {
                       href={href}
                       target={href?.startsWith('http') ? '_blank' : undefined}
                       rel={href?.startsWith('http') ? 'noreferrer' : undefined}
-                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 transition-all duration-300 hover:border-[#00fff5]/60 hover:bg-[#00fff5]/10"
+                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 transition-all duration-300 hover:border-[#38bdf8]/60 hover:bg-[#38bdf8]/10"
                       whileHover={{ y: -4 }}
                     >
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.18),_transparent_60%)]" />
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_60%)]" />
                       <div className="relative space-y-1">
                         <p className="text-xs uppercase tracking-[0.2em] text-white/60">{label}</p>
                         <div className="flex items-center gap-2 text-sm md:text-base text-white/90 break-all">
@@ -337,13 +337,13 @@ export default function SearchInterface() {
               </div>
 
               <motion.div 
-                className="relative rounded-2xl border border-[#ff2d55]/30 bg-black/60 p-6 lg:p-8 backdrop-blur-lg"
+                className="relative rounded-2xl border border-[#6366f1]/30 bg-black/60 p-6 lg:p-8 backdrop-blur-lg"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.45 }}
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,45,85,0.15),_transparent_55%)]" />
-                <div className="absolute -top-10 -right-12 h-40 w-40 rounded-full bg-[#ff2d55]/30 blur-3xl" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.15),_transparent_55%)]" />
+                <div className="absolute -top-10 -right-12 h-40 w-40 rounded-full bg-[#6366f1]/30 blur-3xl" />
                 <div className="relative space-y-5">
                   <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/50">
                     <span>Systems Monitor</span>
@@ -358,11 +358,11 @@ export default function SearchInterface() {
                           href={project.link}
                           target={project.link ? '_blank' : undefined}
                           rel={project.link ? 'noreferrer' : undefined}
-                          className="block rounded-xl border border-white/10 bg-black/40 p-4 transition-colors duration-300 hover:border-[#ff2d55]/60 hover:bg-[#ff2d55]/10"
+                          className="block rounded-xl border border-white/10 bg-black/40 p-4 transition-colors duration-300 hover:border-[#6366f1]/60 hover:bg-[#6366f1]/10"
                           whileHover={{ x: 6 }}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-[#ff2d55]">{project.title}</p>
+                            <p className="text-sm font-semibold text-[#6366f1]">{project.title}</p>
                             <span className="text-xs text-white/60">#{idx + 1}</span>
                           </div>
                           {project.technologies && (
@@ -380,7 +380,7 @@ export default function SearchInterface() {
                     <div className="mt-3 space-y-2">
                       {skillHighlights.map(({ label, items }) => (
                         <div key={label} className="flex flex-wrap gap-2">
-                          <span className="rounded-full border border-[#00fff5]/40 bg-[#00fff5]/10 px-3 py-1 text-xs uppercase tracking-wide text-[#00fff5]">
+                          <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-3 py-1 text-xs uppercase tracking-wide text-[#38bdf8]">
                             {label}
                           </span>
                           {items.map((item) => (
@@ -400,85 +400,55 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          {(isSearching || (!isSearching && agentAnswer)) && (
+          {!isSearching && agentAnswer && (
             <motion.div
-              className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(0,255,245,0.08)]"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.08)]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.48 }}
             >
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.16),_transparent_65%)]" />
-              <AnimatePresence mode="popLayout" initial={false}>
-                {isSearching ? (
-                  <motion.div
-                    key="searching"
-                    className="relative flex flex-col items-center gap-4 py-6"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <div className="text-[#00fff5] animate-pulse text-xl">Scanning neural network...</div>
-                    <div className="w-full h-1 bg-black/30 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-[#ff2d55]"
-                        initial={{ width: '0%' }}
-                        animate={{ width: '100%' }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      />
-                    </div>
-                  </motion.div>
-                ) : (
-                  agentAnswer && (
-                    <motion.div
-                      key="answer"
-                      className="relative flex flex-col gap-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <span className="rounded-full border border-[#00fff5]/40 bg-[#00fff5]/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#00fff5] w-fit">
-                        Agent Response
-                      </span>
-                      {lastQuery && (
-                        <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-                          Query: “{lastQuery}”
-                        </p>
-                      )}
-                      <div className="text-white/80 text-sm md:text-base leading-relaxed">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            strong: ({ node, ...props }) => (
-                              <span className="text-white font-semibold" {...props} />
-                            ),
-                            em: ({ node, ...props }) => (
-                              <span className="italic text-white/80" {...props} />
-                            ),
-                            p: ({ node, ...props }) => (
-                              <p className="mb-3 last:mb-0" {...props} />
-                            ),
-                            ul: ({ node, ...props }) => (
-                              <ul className="list-disc pl-5 space-y-2" {...props} />
-                            ),
-                            ol: ({ node, ...props }) => (
-                              <ol className="list-decimal pl-5 space-y-2" {...props} />
-                            ),
-                            li: ({ node, ...props }) => <li className="pl-1" {...props} />
-                          }}
-                        >
-                          {agentAnswer}
-                        </ReactMarkdown>
-                      </div>
-                    </motion.div>
-                  )
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_65%)]" />
+              <div className="relative flex flex-col gap-4">
+                <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#38bdf8] w-fit">
+                  Agent Response
+                </span>
+                {lastQuery && (
+                  <p className="text-xs uppercase tracking-[0.25em] text-white/40">
+                    Query: “{lastQuery}”
+                  </p>
                 )}
-              </AnimatePresence>
+                <div className="text-white/80 text-sm md:text-base leading-relaxed">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      strong: ({ node, ...props }) => (
+                        <span className="text-white font-semibold" {...props} />
+                      ),
+                      em: ({ node, ...props }) => (
+                        <span className="italic text-white/80" {...props} />
+                      ),
+                      p: ({ node, ...props }) => (
+                        <p className="mb-3 last:mb-0" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul className="list-disc pl-5 space-y-2" {...props} />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol className="list-decimal pl-5 space-y-2" {...props} />
+                      ),
+                      li: ({ node, ...props }) => <li className="pl-1" {...props} />
+                    }}
+                  >
+                    {agentAnswer}
+                  </ReactMarkdown>
+                </div>
+              </div>
             </motion.div>
           )}
 
           {/* Search Panel */}
           <motion.div
-            className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(176,38,255,0.08)]"
+            className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(99,102,241,0.12)]"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -497,22 +467,39 @@ export default function SearchInterface() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45 }}
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="relative w-full sm:flex-1">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#00fff5]/30" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="relative w-full sm:flex-1 pb-4 sm:pb-0">
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#38bdf8]/30" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(0,255,245,0.05)]
-                    focus:outline-none focus:ring-2 focus:ring-[#ff2d55] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-center"
+                    className="w-full h-16 rounded-2xl bg-black/70 px-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.05)]
+                    focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-center"
                     placeholder="What do you want to know about Aryan?"
                   />
+                  <AnimatePresence>
+                    {isSearching && (
+                      <motion.div
+                        key="search-progress"
+                        className="pointer-events-none absolute -bottom-1 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/10"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                      >
+                        <motion.div
+                          className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#38bdf8] via-[#6366f1] to-transparent"
+                          animate={{ x: ['-50%', '110%'] }}
+                          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <motion.button
                   type="submit"
-                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-[#ff2d55] via-[#b026ff] to-[#00fff5]
-                    px-6 py-3 text-sm md:text-base font-semibold text-white shadow-[0_0_18px_rgba(255,45,85,0.4)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(176,38,255,0.6)]"
+                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#38bdf8]
+                    px-6 py-3 text-sm md:text-base font-semibold text-white shadow-[0_0_18px_rgba(99,102,241,0.35)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(56,189,248,0.45)]"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -520,7 +507,6 @@ export default function SearchInterface() {
                 </motion.button>
               </div>
             </motion.form>
-
             <motion.div 
               className="grid grid-cols-2 md:grid-cols-4 gap-4"
               initial={{ opacity: 0 }}
@@ -531,39 +517,39 @@ export default function SearchInterface() {
               <motion.button
                 key={section}
                 onClick={() => handleSectionSelect(section)}
-                className={`group relative overflow-hidden rounded-2xl border ${
-                    activeSection === section ? 'border-[#ff2d55]' : 'border-white/10'
-                  } bg-white/5 p-4 text-left transition-all duration-300 hover:border-[#ff2d55]/70 hover:bg-[#ff2d55]/15 capitalize`}
-                  whileHover={{ y: -4 }}
+                className={`group relative overflow-hidden rounded-xl border ${
+                    activeSection === section ? 'border-[#6366f1]' : 'border-white/10'
+                  } bg-white/5 p-3 text-left transition-all duration-300 hover:border-[#6366f1]/70 hover:bg-[#6366f1]/15 capitalize`}
+                  whileHover={{ y: -3 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(255,45,85,0.15),_transparent_65%)]" />
-                  <div className="relative space-y-2">
-                    <p className="text-xs uppercase tracking-[0.35em] text-white/50">Jump To</p>
-                    <p className="text-lg font-semibold text-white">{section}</p>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.12),_transparent_65%)]" />
+                  <div className="relative space-y-1.5">
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-white/50">Jump To</p>
+                    <p className="text-sm font-semibold text-white">{section}</p>
                   </div>
                 </motion.button>
               ))}
             </motion.div>
 
             {/* <div className="flex items-center gap-2 text-xs text-white/60">
-              <span className="inline-flex h-2 w-2 rounded-full bg-[#00fff5]" />
+              <span className="inline-flex h-2 w-2 rounded-full bg-[#38bdf8]" />
               <span>Keyword search ready</span>
             </div> */}
           </motion.div>
 
           <motion.div
-            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl shadow-[0_0_60px_rgba(0,255,245,0.06)]"
+            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl shadow-[0_0_60px_rgba(56,189,248,0.06)]"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,245,0.08),_transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.08),_transparent_60%)]" />
             <div
               className="absolute inset-0 opacity-40 mix-blend-overlay"
               style={{
                 backgroundImage:
-                  'repeating-linear-gradient(90deg, rgba(0,255,245,0.12), rgba(0,255,245,0.12) 1px, transparent 1px, transparent 24px)'
+                  'repeating-linear-gradient(90deg, rgba(56,189,248,0.12), rgba(56,189,248,0.12) 1px, transparent 1px, transparent 24px)'
               }}
             />
             <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4 auto-rows-fr">
@@ -612,7 +598,7 @@ export default function SearchInterface() {
             <motion.div className="mt-8 space-y-4">
               {!isSearching && error && (
                 <motion.div
-                  className="text-center text-[#ff2d55]"
+                  className="text-center text-[#ef4444]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -623,7 +609,7 @@ export default function SearchInterface() {
 
               {lastQuery && !isSearching && !agentAnswer && !error && (
                 <motion.div 
-                  className="text-center text-[#ff2d55]"
+                  className="text-center text-[#6366f1]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
