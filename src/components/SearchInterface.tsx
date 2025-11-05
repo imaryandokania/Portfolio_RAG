@@ -598,14 +598,16 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          <motion.div
-            className="space-y-4"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <ExperienceTimeline />
-          </motion.div>
+          {searchResults.length === 0 && !activeSection && !searchQuery && (
+            <motion.div
+              className="space-y-4"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <ExperienceTimeline />
+            </motion.div>
+          )}
 
           {/* Results Area */}
           <AnimatePresence>
