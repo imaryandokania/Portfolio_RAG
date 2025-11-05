@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Aryan Dokania | Neural Resume Terminal",
+  title: "Aryan Dokania",
   description:
     "Interactive resume for Aryan Dokania featuring AI-assisted search across experience, projects, and skills.",
   applicationName: "Aryan Dokania Resume",

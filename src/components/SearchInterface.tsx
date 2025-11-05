@@ -421,7 +421,7 @@ export default function SearchInterface() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                   >
-                    Neural Portfolio Interface
+                    Portfolio
                   </motion.div>
                   <motion.h1 
                     className="text-5xl md:text-6xl font-bold text-white leading-tight cyberpunk-glow"
