@@ -7,7 +7,7 @@ import {
 } from "../../../utils/resumeDocuments";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
-const CHAT_MODEL = "gpt-5-nano";
+const CHAT_MODEL = "gpt-4o-mini";
 const MAX_CONTEXT_DOCUMENTS = 6;
 const MAX_QUERY_CHARS = 500;
 
@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
 
     const completion = await client.chat.completions.create({
       model: CHAT_MODEL,
+      temperature: 0.3,
       messages: [
         {
           role: "system",
