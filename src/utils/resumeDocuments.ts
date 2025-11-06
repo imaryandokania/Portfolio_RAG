@@ -41,6 +41,7 @@ export function buildResumeDocuments(): ResumeDocument[] {
       section: "experience",
       title: `${item.company} — ${item.title}`,
       subtitle: `${item.location} | ${item.period}`,
+      content: item.status,
       points: item.points,
     });
   });

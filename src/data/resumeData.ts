@@ -36,6 +36,7 @@ export const resumeData = {
         company: "Cisco Systems",
         location: "Ann Arbor, MI",
         period: "June 2025 - Sept. 2025",
+        status: "Internship was completed on Sept. 2025",
         points: [
           "Developed an LLM-based code reviewer using AWS Bedrock and a RAG pipeline with Titan embeddings to analyze pull requests for logic errors, security risks, and design issues.",
           "Implemented optimized FAISS vector search using AWS Lambda for scalable semantic search and batch embedding generation, reducing processing time by 58%.",
@@ -47,6 +48,7 @@ export const resumeData = {
         company: "Spatiotemporal Machine Learning Lab (Prof. Rose Yu)",
         location: "San Diego, CA",
         period: "June 2024 - Sept. 2024",
+        status: "Completed fixed-term research role in September 2024.",
         points: [
           "Built a PyTorch-based meta-learning optimizer with adaptive momentum and gradient scaling using a two-layer LSTM and MLP architecture, trained on GPU across 100+ optimization trajectories.",
           "Benchmarked the meta-optimizer on five unseen optimization trajectories, achieving faster convergence than gradient descent and LSTM-based baselines using learned momentum coefficients.",
@@ -58,6 +60,7 @@ export const resumeData = {
         company: "Oracle",
         location: "Bengaluru, India",
         period: "Aug. 2023 - June 2024",
+        status: "Previous full-time position; ended in June 2024.",
         points: [
           "Upgraded the policy system's MySQL stack (v6.0 to v8.0), doubling replication speed and improving concurrency through InnoDB tuning and parallel replication.",
           "Containerized the Multi-Protocol Routing Agent and Policy Engine using Docker and Kubernetes, automating rollouts and reducing migration time by nearly 50%.",
@@ -70,6 +73,7 @@ export const resumeData = {
         company: "Oracle",
         location: "Bengaluru, India",
         period: "Jan. 2023 - July 2023",
+        status: "Prior internship; concluded in July 2023.",
         points: [
           "Designed a fault-tolerant network architecture and automated failover handling with Python routing logic, enabling high-availability services with ~2 ms recovery in 4G distributed infrastructure."
         ]
