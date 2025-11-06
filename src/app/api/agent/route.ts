@@ -14,6 +14,17 @@ const MAX_QUERY_CHARS = 500;
 const docs = buildResumeDocuments();
 let cachedEmbeddings: number[][] | null = null;
 
+const SECTION_KEYWORDS: Record<string, string[]> = {
+  summary: ["summary", "overview", "bio"],
+  education: ["education", "school", "college", "university", "academic"],
+  experience: ["experience", "job", "work", "career", "role"],
+  projects: ["project", "projects", "side project"],
+  skills: ["skill", "skills", "technologies", "tools"],
+  achievements: ["achievement", "achievements", "award", "awards", "honor"],
+  research: ["research", "paper", "publication"],
+};
+const SECTION_MATCH_BOOST = 0.15;
+
 function getClient(): OpenAI {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("Missing OPENAI_API_KEY environment variable.");
@@ -126,11 +137,22 @@ export async function POST(request: NextRequest) {
 
     const queryEmbedding = queryEmbeddingResponse.data[0]?.embedding ?? [];
 
+    const normalizedQuery = query.toLowerCase();
+    const matchedSections = new Set<string>();
+
+    Object.entries(SECTION_KEYWORDS).forEach(([section, keywords]) => {
+      if (keywords.some((keyword) => normalizedQuery.includes(keyword))) {
+        matchedSections.add(section);
+      }
+    });
+
     const rankedDocs: RankedDoc[] = docs
       .map((doc, index) => ({
         doc,
         embedding: docEmbeddings[index],
-        similarity: cosineSimilarity(queryEmbedding, docEmbeddings[index]),
+        similarity:
+          cosineSimilarity(queryEmbedding, docEmbeddings[index]) +
+          (matchedSections.has(doc.section) ? SECTION_MATCH_BOOST : 0),
       }))
       .filter((entry) => entry.similarity > 0)
       .sort((a, b) => b.similarity - a.similarity)
