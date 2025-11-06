@@ -159,8 +159,8 @@ export const resumeData = {
     research: [
       {
         title: "Improving Learning to Optimize Using Parameter Symmetries",
-        authors: ["Guy Zamir", "Aryan Dokania", "Bingqing Zhao", "Rose Yu"],
-        venue: "arXiv preprint arXiv:2504.15399",
+        authors: ["Guy Zamir", "Aryan Dokania", "Bo Zhao", "Rose Yu"],
+        venue: "ICLR",
         year: "2025",
         link: "https://arxiv.org/abs/2504.15399"
       },
