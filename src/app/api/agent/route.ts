@@ -7,7 +7,7 @@ import {
 } from "../../../utils/resumeDocuments";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
-const CHAT_MODEL = "gpt-4o-mini";
+const CHAT_MODEL = "gpt-5-nano";
 const MAX_CONTEXT_DOCUMENTS = 6;
 const MAX_QUERY_CHARS = 500;
 
