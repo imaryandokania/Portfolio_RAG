@@ -2,7 +2,7 @@ export const resumeData = {
   name: "Aryan Dokania",
   title: "Software Engineer",
   contact: {
-    phone: "+1 (925)750-0470",
+    // phone: "+1 (925)750-0470",
     location: "San Diego, CA",
     email: "aryandokania2001@gmail.com",
     linkedin: "linkedin.com/in/aryandokania",

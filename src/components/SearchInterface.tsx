@@ -25,11 +25,11 @@ export default function SearchInterface() {
         label: 'Location',
         value: resumeData.contact.location
       },
-      {
-        label: 'Phone',
-        value: resumeData.contact.phone,
-        href: `tel:${resumeData.contact.phone.replace(/[^0-9+]/g, '')}`
-      },
+      // {
+      //   label: 'Phone',
+      //   value: resumeData.contact.phone,
+      //   href: `tel:${resumeData.contact.phone.replace(/[^0-9+]/g, '')}`
+      // },
       {
         label: 'Email',
         value: resumeData.contact.email,
