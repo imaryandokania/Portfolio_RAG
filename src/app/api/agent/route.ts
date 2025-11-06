@@ -168,23 +168,32 @@ export async function POST(request: NextRequest) {
 
     const context = buildContextSection(rankedDocs);
 
-    const completion = await client.chat.completions.create({
+    const response = await client.responses.create({
       model: CHAT_MODEL,
-      temperature: 0.3,
-      messages: [
+      tools: [{ type: "web_search_preview" }],
+      input: [
         {
           role: "system",
-          content:
-            "You are an AI agent that answers questions about Aryan's resume. Use only the provided context. Respond concisely and reference specific experiences when helpful. Use bullet points only when listing several related items such as education section, experience highlights, or project details; otherwise prefer flowing sentences. Keep the tone conversational and blend sourced details naturally so it feels like a dialogue rather than a document dump. If there are dates it should be in chronological order.",
+          content: [
+            {
+              type: "input_text",
+              text: "You are an AI agent that answers questions about Aryan's resume. Use only the provided context. Respond concisely and reference specific experiences when helpful. Use bullet points only when listing several related items such as education entries, experience highlights, or project details; otherwise prefer flowing sentences. Keep the tone conversational and blend sourced details naturally so it feels like a dialogue rather than a document dump. If there are dates it should be in chronological order.",
+            },
+          ],
         },
         {
           role: "user",
-          content: `Context:\n${context}\n\nQuestion: ${query}`,
+          content: [
+            {
+              type: "input_text",
+              text: `Context:\n${context}\n\nQuestion: ${query}`,
+            },
+          ],
         },
       ],
     });
 
-    const answer = completion.choices[0]?.message?.content?.trim();
+    const answer = response.output_text?.trim();
 
   return NextResponse.json({
     answer:
