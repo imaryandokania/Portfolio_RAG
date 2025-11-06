@@ -170,7 +170,6 @@ export async function POST(request: NextRequest) {
 
     const completion = await client.chat.completions.create({
       model: CHAT_MODEL,
-      temperature: 0.2,
       messages: [
         {
           role: "system",
