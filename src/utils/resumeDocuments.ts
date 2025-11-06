@@ -126,12 +126,13 @@ export function buildResumeDocuments(): ResumeDocument[] {
 
 export function buildResumeContext(doc: ResumeDocument): string {
   const aggregateText = [
+    `section ${doc.section}`,
     doc.title,
     doc.subtitle,
     doc.content,
     doc.points?.join(" "),
   ]
-    .filter(Boolean)
+    .filter((value) => typeof value === "string" && value.trim().length > 0)
     .join(" ");
 
   return aggregateText;
