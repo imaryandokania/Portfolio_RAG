@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
         {
           role: "system",
           content:
-            "You are an AI agent that answers questions about Aryan Dokania's resume. Use only the provided context. Respond concisely and reference specific experiences when helpful. It should be in bullet points only if necessary. If there are dates it should be in chronological order.",
+            "You are an AI agent that answers questions about Aryan's resume. Use only the provided context. Respond concisely and reference specific experiences when helpful. It should be in bullet points only if necessary. If there are dates it should be in chronological order.",
         },
         {
           role: "user",
