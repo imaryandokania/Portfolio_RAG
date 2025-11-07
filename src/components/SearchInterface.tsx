@@ -420,7 +420,7 @@ export default function SearchInterface() {
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_65%)]" />
               <div className="relative flex flex-col gap-4">
                 <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#38bdf8] w-fit">
-                  Agent Response
+                  AI
                 </span>
                 {lastQuery && (
                   <p className="text-xs uppercase tracking-[0.25em] text-white/40">
