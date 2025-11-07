@@ -240,7 +240,7 @@ export default function SearchInterface() {
   };
 
   const handleSectionSelect = (section: string) => {
-    const prompt = `Summarize about Aryan's ${section} `;
+    const prompt = `Summarize about your ${section} `;
     setActiveSection(section);
     setSearchQuery(prompt);
     void queryAgent(prompt);
