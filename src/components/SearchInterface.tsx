@@ -240,7 +240,7 @@ export default function SearchInterface() {
   };
 
   const handleSectionSelect = (section: string) => {
-    const prompt = `Summarize the ${section} section from Aryan Dokania's resume.`;
+    const prompt = `Summarize about Aryan's ${section} `;
     setActiveSection(section);
     setSearchQuery(prompt);
     void queryAgent(prompt);
@@ -547,7 +547,9 @@ export default function SearchInterface() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-            {Object.keys(resumeData.sections).map((section) => (
+            {Object.keys(resumeData.sections)
+              .filter((section) => section.toLowerCase() !== 'summary')
+              .map((section) => (
               <motion.button
                 key={section}
                 onClick={() => handleSectionSelect(section)}

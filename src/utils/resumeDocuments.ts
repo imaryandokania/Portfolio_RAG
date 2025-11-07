@@ -14,16 +14,16 @@ export function buildResumeDocuments(): ResumeDocument[] {
   const docs: ResumeDocument[] = [];
   const { sections } = resumeData;
 
-  if (sections.summary) {
-    sections.summary.forEach((line, index) => {
-      docs.push({
-        id: `summary-${index}`,
-        section: "summary",
-        title: "Professional Summary",
-        content: line,
-      });
-    });
-  }
+  // if (sections.summary) {
+  //   sections.summary.forEach((line, index) => {
+  //     docs.push({
+  //       id: `summary-${index}`,
+  //       section: "summary",
+  //       title: "Professional Summary",
+  //       content: line,
+  //     });
+  //   });
+  // }
 
   sections.education?.forEach((item, index) => {
     docs.push({

@@ -11,7 +11,7 @@ export const resumeData = {
   },
   sections: {
     summary: [
-      "Cloud-native software engineer with experience across large-scale networking, applied machine learning, and distributed systems.",
+      "Software engineer with experience across large-scale networking, applied machine learning, and distributed systems.",
       "Focused on building reliable infrastructure, intelligent developer tooling, and high-availability services."
     ],
     education: [
