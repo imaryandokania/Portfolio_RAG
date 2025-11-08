@@ -3,7 +3,6 @@ import OpenAI from 'openai';
 
 const SPEECH_MODEL = 'gpt-4o-mini-tts';
 const SPEECH_VOICE = 'onyx';
-const SPEECH_FORMAT = 'mp3';
 const SPEECH_CHAR_LIMIT = 650;
 
 function getClient(): OpenAI {
@@ -43,8 +42,7 @@ export async function POST(request: NextRequest) {
     const speech = await client.audio.speech.create({
       model: SPEECH_MODEL,
       voice: SPEECH_VOICE,
-      input: output,
-      format: SPEECH_FORMAT
+      input: output
     });
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer());

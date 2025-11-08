@@ -333,7 +333,9 @@ export default function SearchInterface() {
       return;
     }
 
-    analyserRef.current.getByteTimeDomainData(analyserBufferRef.current);
+    analyserRef.current.getByteTimeDomainData(
+      analyserBufferRef.current as Uint8Array<ArrayBuffer>
+    );
     const data = analyserBufferRef.current;
     let sumSquares = 0;
     for (let i = 0; i < data.length; i += 1) {
