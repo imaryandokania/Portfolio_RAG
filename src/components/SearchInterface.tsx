@@ -1099,7 +1099,7 @@ export default function SearchInterface() {
               transition={{ delay: 0.45 }}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                <div className="relative w-full sm:flex-1 pb-4 sm:pb-0">
+                <div className="relative w-full sm:flex-1 pb-5 sm:pb-0">
                   <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[#38bdf8]/15 via-transparent to-[#6366f1]/20 blur-xl" />
                   <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#38bdf8]/30" />
                   <div className="pointer-events-none absolute inset-x-6 top-3 flex items-center justify-between text-[11px] uppercase tracking-[0.34em] text-white/40">
@@ -1167,7 +1167,7 @@ export default function SearchInterface() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div className="mt-3 min-h-[1.25rem] text-xs text-white/60">
+                  <div className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-center text-xs text-white/70 sm:text-left">
                     {voiceError ? (
                       <span className="text-[#f87171]" role="alert">
                         {voiceError}
