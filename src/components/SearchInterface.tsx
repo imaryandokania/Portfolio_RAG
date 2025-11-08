@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -8,9 +8,12 @@ import { resumeData } from '../data/resumeData';
 import { computeExperienceMetrics } from '../utils/resumeMetrics';
 import SkillClusterBars from './SkillClusterBars';
 import CyberBackground from './CyberBackground';
+import VoiceOrb from './VoiceOrb';
 
 export default function SearchInterface() {
   const MAX_QUERY_CHARS = 500;
+  const SILENCE_THRESHOLD = 0.02;
+  const SILENCE_TIMEOUT_MS = 1500;
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
@@ -18,6 +21,35 @@ export default function SearchInterface() {
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState('');
   const [missionClock, setMissionClock] = useState('--:--:--');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
+  const [voiceLevel, setVoiceLevel] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [voiceSessionStage, setVoiceSessionStage] = useState<'idle' | 'recording' | 'processing' | 'answer'>('idle');
+  const [voiceSessionAnswer, setVoiceSessionAnswer] = useState('');
+  const [isReplyAudioLoading, setIsReplyAudioLoading] = useState(false);
+  const [replyAudioUrl, setReplyAudioUrl] = useState<string | null>(null);
+  const [replyAudioError, setReplyAudioError] = useState<string | null>(null);
+  const [speechContext, setSpeechContext] = useState<'answer' | 'greeting' | null>(null);
+  const [voiceGreetingActive, setVoiceGreetingActive] = useState(false);
+  const [voiceGreetingPlayed, setVoiceGreetingPlayed] = useState(false);
+  const [voiceAnswerShortened, setVoiceAnswerShortened] = useState(false);
+  const MAX_SPOKEN_CHARS = 600;
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const analyserBufferRef = useRef<Uint8Array | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const silenceStartRef = useRef<number | null>(null);
+  const isRecordingRef = useRef(false);
+  const replyAudioRef = useRef<HTMLAudioElement | null>(null);
+  const replyAudioUrlRef = useRef<string | null>(null);
+  const hasDetectedSpeechRef = useRef(false);
+  const pendingRecorderStartRef = useRef<(() => void) | null>(null);
+  const discardRecordingRef = useRef(false);
 
   const contactEntries = useMemo(
     () => [
@@ -148,6 +180,515 @@ export default function SearchInterface() {
     return () => window.clearInterval(timer);
   }, []);
 
+  const stopVoicePlayback = useCallback(() => {
+    const audio = replyAudioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    if (replyAudioUrlRef.current) {
+      URL.revokeObjectURL(replyAudioUrlRef.current);
+      replyAudioUrlRef.current = null;
+    }
+    setReplyAudioUrl(null);
+    setSpeechContext(null);
+  }, []);
+
+  const cleanupAudio = useCallback(() => {
+    if (animationFrameRef.current) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (analyserRef.current) {
+      analyserRef.current.disconnect();
+      analyserRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => null);
+      audioContextRef.current = null;
+    }
+
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+
+    analyserBufferRef.current = null;
+    setVoiceLevel(0);
+  }, []);
+
+  const limitSpeechText = useCallback(
+    (text: string): { value: string; shortened: boolean } => {
+      if (text.length <= MAX_SPOKEN_CHARS) {
+        return { value: text, shortened: false };
+      }
+
+      const clipped = text.slice(0, MAX_SPOKEN_CHARS);
+      const lastSentence =
+        Math.max(clipped.lastIndexOf('. '), clipped.lastIndexOf('! '), clipped.lastIndexOf('? ')) + 1;
+      const safeLength = lastSentence > MAX_SPOKEN_CHARS * 0.6 ? lastSentence : clipped.length;
+      const trimmed = clipped.slice(0, safeLength).trim();
+
+      return { value: `${trimmed}${trimmed.endsWith('…') ? '' : ' …'}`, shortened: true };
+    },
+    [MAX_SPOKEN_CHARS]
+  );
+
+  const speakText = useCallback(
+    async (text: string, context: 'answer' | 'greeting') => {
+      const trimmed = text.trim();
+      if (!trimmed) {
+        stopVoicePlayback();
+        setReplyAudioError(null);
+        if (context === 'greeting') {
+          setVoiceGreetingActive(false);
+        }
+        return;
+      }
+
+      try {
+        if (context === 'answer') {
+          setReplyAudioError(null);
+          setIsReplyAudioLoading(true);
+        }
+        if (context === 'greeting') {
+          setVoiceGreetingActive(true);
+        }
+        stopVoicePlayback();
+
+        const { value, shortened } = limitSpeechText(trimmed);
+        if (context === 'answer') {
+          setVoiceAnswerShortened(shortened);
+        } else if (context === 'greeting') {
+          setVoiceAnswerShortened(false);
+        }
+
+        const response = await fetch('/api/speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ text: value })
+        });
+
+        if (!response.ok) {
+          const message = await response.text().catch(() => '');
+          throw new Error(message || 'Unable to synthesize speech.');
+        }
+
+        const audioBlob = await response.blob();
+        const url = URL.createObjectURL(audioBlob);
+        replyAudioUrlRef.current = url;
+        setReplyAudioUrl(url);
+        setSpeechContext(context);
+      } catch (err) {
+        stopVoicePlayback();
+        if (context === 'answer') {
+          setReplyAudioError(err instanceof Error ? err.message : 'Unable to speak the answer.');
+        } else {
+          console.error('Voice greeting failed', err);
+          setVoiceGreetingActive(false);
+        }
+      } finally {
+        if (context === 'answer') {
+          setIsReplyAudioLoading(false);
+        }
+      }
+    },
+    [limitSpeechText, stopVoicePlayback]
+  );
+
+  const stopVoiceCapture = useCallback(
+    (closeOverlay = false) => {
+      discardRecordingRef.current = closeOverlay;
+      isRecordingRef.current = false;
+      silenceStartRef.current = null;
+      hasDetectedSpeechRef.current = false;
+      setVoiceGreetingActive(false);
+      pendingRecorderStartRef.current = null;
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      } else {
+        cleanupAudio();
+        setIsRecording(false);
+      }
+
+      if (closeOverlay) {
+        setVoiceSessionStage('idle');
+        setVoiceSessionAnswer('');
+        setVoiceError(null);
+        setReplyAudioError(null);
+        setVoiceAnswerShortened(false);
+        stopVoicePlayback();
+      }
+    },
+    [cleanupAudio, stopVoicePlayback]
+  );
+
+  const monitorVoiceLevel = useCallback(() => {
+    if (!analyserRef.current || !analyserBufferRef.current) {
+      return;
+    }
+
+    analyserRef.current.getByteTimeDomainData(analyserBufferRef.current);
+    const data = analyserBufferRef.current;
+    let sumSquares = 0;
+    for (let i = 0; i < data.length; i += 1) {
+      const deviation = data[i] - 128;
+      sumSquares += deviation * deviation;
+    }
+    const rms = Math.sqrt(sumSquares / data.length) / 128;
+    const smoothedLevel = Math.min(1, rms);
+    setVoiceLevel((prev) => prev * 0.6 + smoothedLevel * 0.4);
+
+    if (isRecordingRef.current) {
+      if (smoothedLevel > SILENCE_THRESHOLD * 1.5) {
+        hasDetectedSpeechRef.current = true;
+      }
+
+      if (smoothedLevel < SILENCE_THRESHOLD) {
+        if (hasDetectedSpeechRef.current) {
+          if (silenceStartRef.current == null) {
+            silenceStartRef.current = performance.now();
+          } else if (performance.now() - silenceStartRef.current >= SILENCE_TIMEOUT_MS) {
+            stopVoiceCapture();
+            silenceStartRef.current = null;
+            hasDetectedSpeechRef.current = false;
+          }
+        }
+      } else {
+        silenceStartRef.current = null;
+      }
+    } else {
+      silenceStartRef.current = null;
+    }
+
+    animationFrameRef.current = window.requestAnimationFrame(monitorVoiceLevel);
+  }, [SILENCE_THRESHOLD, SILENCE_TIMEOUT_MS, stopVoiceCapture]);
+
+  const queryAgent = useCallback(
+    async (query: string, options?: { viaVoice?: boolean }) => {
+      const normalizedQuery = query.trim();
+      if (!normalizedQuery) {
+        if (!options?.viaVoice) {
+          stopVoicePlayback();
+          setVoiceSessionStage('idle');
+          setVoiceSessionAnswer('');
+        }
+        setIsSearching(false);
+        setAgentAnswer('');
+        setLastQuery('');
+        setError(null);
+        return;
+      }
+
+      if (!options?.viaVoice) {
+        stopVoicePlayback();
+        setVoiceSessionStage('idle');
+        setVoiceSessionAnswer('');
+      } else {
+        setAgentAnswer('');
+      }
+
+      setReplyAudioError(null);
+      setIsSearching(true);
+      setActiveSection('');
+      if (!options?.viaVoice) {
+        setAgentAnswer('');
+      }
+      setError(null);
+      if (!options?.viaVoice) {
+        setLastQuery(normalizedQuery);
+      }
+
+      try {
+        if (normalizedQuery.length > MAX_QUERY_CHARS) {
+          throw new Error(`Query is too long. Please stay under ${MAX_QUERY_CHARS} characters.`);
+        }
+
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: normalizedQuery })
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? 'Failed to query the AI agent.');
+        }
+
+        const payload = (await response.json()) as {
+          answer?: string;
+        };
+
+        const answerText = payload.answer ?? '';
+
+        if (options?.viaVoice) {
+          setVoiceSessionAnswer(answerText);
+          setAgentAnswer('');
+          setVoiceGreetingActive(false);
+          if (answerText) {
+            setVoiceSessionStage('answer');
+            void speakText(answerText, 'answer');
+          } else {
+            setVoiceSessionStage('idle');
+          }
+        } else {
+          setAgentAnswer(answerText);
+          setVoiceSessionAnswer('');
+          stopVoicePlayback();
+        }
+      } catch (err) {
+        console.error('Agent query failed', err);
+        setAgentAnswer('');
+        setError(err instanceof Error ? err.message : 'Unable to query the AI agent.');
+        if (options?.viaVoice) {
+          setVoiceSessionStage('idle');
+          setVoiceSessionAnswer('');
+          setVoiceGreetingActive(false);
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [speakText, stopVoicePlayback]
+  );
+
+  const handleTranscription = useCallback(
+    async (audioBlob: Blob) => {
+      if (!audioBlob.size) {
+        setIsVoiceProcessing(false);
+        setVoiceSessionStage('idle');
+        setVoiceGreetingActive(false);
+        return;
+      }
+
+      try {
+        setIsVoiceProcessing(true);
+        setVoiceGreetingActive(false);
+        setVoiceSessionStage('processing');
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'speech.webm');
+
+        const response = await fetch('/api/voice', {
+          method: 'POST',
+          body: formData
+        });
+
+        const payload = (await response.json().catch(() => null)) as
+          | { transcript?: string; error?: string }
+          | null;
+
+        if (!response.ok || !payload) {
+          throw new Error(payload?.error ?? 'Unable to transcribe audio.');
+        }
+
+        const transcript = payload.transcript?.trim();
+        if (!transcript) {
+          throw new Error('I could not understand that. Please try again.');
+        }
+
+        setVoiceError(null);
+        await queryAgent(transcript, { viaVoice: true });
+      } catch (err) {
+        console.error('Voice transcription failed', err);
+        setVoiceError(err instanceof Error ? err.message : 'Voice assistant unavailable.');
+        setVoiceSessionStage('idle');
+        setVoiceSessionAnswer('');
+        setVoiceGreetingActive(false);
+      } finally {
+        setIsVoiceProcessing(false);
+      }
+    },
+    [queryAgent]
+  );
+
+  const startVoiceCapture = useCallback(async () => {
+    if (isRecording || isVoiceProcessing) {
+      return;
+    }
+
+    try {
+      setVoiceError(null);
+      stopVoicePlayback();
+      setVoiceSessionAnswer('');
+      setVoiceSessionStage('recording');
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Microphone access is not supported in this browser.');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        isRecordingRef.current = false;
+        silenceStartRef.current = null;
+        setIsRecording(false);
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        audioChunksRef.current = [];
+        cleanupAudio();
+
+        if (discardRecordingRef.current || pendingRecorderStartRef.current) {
+          discardRecordingRef.current = false;
+          pendingRecorderStartRef.current = null;
+          setVoiceSessionStage('idle');
+          setVoiceSessionAnswer('');
+          setVoiceGreetingActive(false);
+          setIsVoiceProcessing(false);
+          return;
+        }
+
+        void handleTranscription(audioBlob);
+      };
+
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyserRef.current = analyser;
+      analyserBufferRef.current = new Uint8Array(analyser.frequencyBinCount);
+      source.connect(analyser);
+
+      const beginRecording = () => {
+        if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'inactive') {
+          return;
+        }
+        discardRecordingRef.current = false;
+        recorder.start();
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        silenceStartRef.current = null;
+        hasDetectedSpeechRef.current = false;
+        monitorVoiceLevel();
+      };
+
+      pendingRecorderStartRef.current = beginRecording;
+
+      if (voiceGreetingPlayed) {
+        beginRecording();
+      } else {
+        setVoiceGreetingActive(true);
+        setVoiceGreetingPlayed(true);
+        void speakText('Hi, I am Aryan. What do you want to know about me?', 'greeting');
+      }
+    } catch (err) {
+      cleanupAudio();
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      silenceStartRef.current = null;
+      setVoiceSessionStage('idle');
+      setVoiceGreetingActive(false);
+      setVoiceError(err instanceof Error ? err.message : 'Unable to start voice capture.');
+    }
+  }, [
+    cleanupAudio,
+    handleTranscription,
+    isRecording,
+    isVoiceProcessing,
+    monitorVoiceLevel,
+    voiceGreetingPlayed,
+    speakText,
+    stopVoicePlayback
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      cleanupAudio();
+    };
+  }, [cleanupAudio]);
+
+  useEffect(() => {
+    const audio = replyAudioRef.current;
+    if (!replyAudioUrl || !audio || !speechContext) {
+      return;
+    }
+    if (speechContext === 'answer' && voiceSessionStage !== 'answer') {
+      return;
+    }
+
+    const startPendingRecording = () => {
+      pendingRecorderStartRef.current?.();
+      pendingRecorderStartRef.current = null;
+    };
+
+    const handleEnded = () => {
+      if (speechContext === 'answer') {
+        if (!isRecordingRef.current && !isVoiceProcessing) {
+          void startVoiceCapture();
+        }
+        setSpeechContext(null);
+      } else if (speechContext === 'greeting') {
+        setVoiceGreetingActive(false);
+        setSpeechContext(null);
+        startPendingRecording();
+      }
+    };
+
+    const handleError = () => {
+      if (speechContext === 'greeting') {
+        setVoiceGreetingActive(false);
+        startPendingRecording();
+      }
+      setSpeechContext(null);
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    const play = async () => {
+      audio.load();
+      try {
+        await audio.play();
+      } catch (err) {
+        console.warn('Unable to autoplay speech audio', err);
+        handleError();
+      }
+    };
+
+    void play();
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, [
+    replyAudioUrl,
+    speechContext,
+    voiceSessionStage,
+    isVoiceProcessing,
+    startVoiceCapture
+  ]);
+
+  useEffect(() => {
+    return () => {
+      stopVoicePlayback();
+    };
+  }, [stopVoicePlayback]);
+
   const telemetryMetrics = useMemo(() => {
     const aggregated = computeExperienceMetrics();
 
@@ -183,71 +724,149 @@ export default function SearchInterface() {
     ];
   }, []);
 
-  const queryAgent = useCallback(
-    async (query: string) => {
-      const normalizedQuery = query.trim();
-      if (!normalizedQuery) {
-        setIsSearching(false);
-        setAgentAnswer('');
-        setLastQuery('');
-        setError(null);
-        return;
-      }
-
-      setIsSearching(true);
-      setActiveSection('');
-      setAgentAnswer('');
-      setError(null);
-      setLastQuery(normalizedQuery);
-
-      try {
-        if (normalizedQuery.length > MAX_QUERY_CHARS) {
-          throw new Error(`Query is too long. Please stay under ${MAX_QUERY_CHARS} characters.`);
-        }
-
-        const response = await fetch('/api/agent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query: normalizedQuery })
-        });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null);
-          throw new Error(payload?.error ?? 'Failed to query the AI agent.');
-        }
-
-        const payload = (await response.json()) as {
-          answer?: string;
-        };
-
-        setAgentAnswer(payload.answer ?? '');
-      } catch (err) {
-        console.error('Agent query failed', err);
-        setAgentAnswer('');
-        setError(err instanceof Error ? err.message : 'Unable to query the AI agent.');
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    []
-  );
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    void queryAgent(searchQuery);
+    setVoiceSessionStage('idle');
+    setVoiceSessionAnswer('');
+    stopVoicePlayback();
+    void queryAgent(searchQuery, { viaVoice: false });
   };
 
   const handleSectionSelect = (section: string) => {
     const prompt = `Summarize about your ${section} `;
     setActiveSection(section);
     setSearchQuery(prompt);
-    void queryAgent(prompt);
+    setVoiceSessionStage('idle');
+    setVoiceSessionAnswer('');
+    stopVoicePlayback();
+    void queryAgent(prompt, { viaVoice: false });
   };
 
   return (
     <div className="relative">
+      <audio ref={replyAudioRef} src={replyAudioUrl ?? undefined} className="hidden" aria-hidden="true" />
+      <AnimatePresence>
+        {voiceSessionStage !== 'idle' && (
+          <motion.div
+            key="voice-overlay"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="flex flex-col items-center gap-6 rounded-3xl border border-white/10 bg-[#050b18]/90 p-8 text-center text-white shadow-[0_0_45px_rgba(56,189,248,0.25)] max-w-lg mx-4"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <VoiceOrb intensity={voiceLevel} />
+              {(voiceSessionStage === 'recording' || voiceSessionStage === 'processing') && (
+                <div className="text-center space-y-2">
+                  <div>
+                    <p className="text-lg font-semibold tracking-wide">
+                      {voiceSessionStage === 'recording' ? 'Listening…' : 'Analyzing…'}
+                    </p>
+                    <p className="text-sm text-white/70">
+                      {voiceSessionStage === 'recording'
+                        ? 'Speak your question. Tap stop when you are done.'
+                        : 'Transcribing and preparing your answer.'}
+                    </p>
+                  </div>
+                  {voiceSessionStage === 'recording' && voiceGreetingActive && (
+                    <p className="text-sm text-[#38bdf8] font-medium">
+                      Hi, I’m Aryan. What do you want to know about me?
+                    </p>
+                  )}
+                </div>
+              )}
+              {voiceSessionStage === 'answer' && (
+                <div className="space-y-3 text-left w-full">
+                  <p className="text-sm uppercase tracking-[0.3em] text-white/60">Answer</p>
+                  <div className="max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/90">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        strong: ({ node, ...props }) => (
+                          <span className="text-white font-semibold" {...props} />
+                        ),
+                        em: ({ node, ...props }) => (
+                          <span className="italic text-white/80" {...props} />
+                        ),
+                        p: ({ node, ...props }) => (
+                          <p className="mb-3 last:mb-0" {...props} />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul className="list-disc pl-5 space-y-2" {...props} />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol className="list-decimal pl-5 space-y-2" {...props} />
+                        ),
+                        li: ({ node, ...props }) => <li className="pl-1" {...props} />
+                      }}
+                    >
+                      {voiceSessionAnswer || agentAnswer}
+                    </ReactMarkdown>
+                  </div>
+                  {(isReplyAudioLoading || replyAudioUrl) && (
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+                      {isReplyAudioLoading ? 'Preparing voice reply…' : 'Speaking… tap “Talk again” to interrupt'}
+                    </p>
+                  )}
+                  {voiceAnswerShortened && (
+                    <p className="text-xs text-white/60">
+                      Voice reply shortened to keep the spoken response concise.
+                    </p>
+                  )}
+                  {replyAudioError && (
+                    <p className="text-xs text-[#f87171]">Voice reply unavailable. Tap “Talk again” to retry.</p>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3 justify-center">
+                {voiceSessionStage === 'recording' && (
+                  <button
+                    type="button"
+                    onClick={() => stopVoiceCapture(true)}
+                    className="rounded-full border border-[#f87171]/50 bg-[#7f1d1d]/40 px-6 py-2 text-sm font-semibold text-white transition hover:border-[#f87171] hover:bg-[#7f1d1d]/70"
+                  >
+                    Stop recording
+                  </button>
+                )}
+                {voiceSessionStage === 'answer' && !isVoiceProcessing && !isRecording && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplyAudioError(null);
+                      void startVoiceCapture();
+                    }}
+                    className="rounded-full border border-[#38bdf8]/60 bg-[#0f172a] px-6 py-2 text-sm font-semibold text-white transition hover:border-[#38bdf8] hover:bg-[#1e293b]"
+                  >
+                    Talk again
+                  </button>
+                )}
+                {voiceSessionStage !== 'recording' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVoiceSessionStage('idle');
+                      setVoiceSessionAnswer('');
+                      setVoiceError(null);
+                      setReplyAudioError(null);
+                      setVoiceAnswerShortened(false);
+                      setVoiceGreetingActive(false);
+                      stopVoicePlayback();
+                    }}
+                    className="rounded-full border border-white/30 bg-white/10 px-6 py-2 text-sm font-semibold text-white transition hover:border-white/70"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <CyberBackground />
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%)]" />
@@ -410,7 +1029,7 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          {!isSearching && agentAnswer && (
+          {voiceSessionStage === 'idle' && !isSearching && agentAnswer && (
             <motion.div
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.08)]"
               initial={{ opacity: 0, y: 20 }}
@@ -495,11 +1114,40 @@ export default function SearchInterface() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-6 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
+                    className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-20 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
                     focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
                     placeholder="What do you want to know about me?"
                     aria-label="Search Aryan's portfolio"
                   />
+                  <button
+                    type="button"
+                    onClick={isRecording ? () => stopVoiceCapture(true) : startVoiceCapture}
+                    disabled={isVoiceProcessing}
+                    className={`absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-2xl border transition
+                      ${
+                        isRecording
+                          ? 'border-[#f87171]/70 bg-[#7f1d1d]/50 text-[#fca5a5]'
+                          : 'border-white/10 bg-white/5 text-white/80 hover:border-[#38bdf8]/60 hover:text-white'
+                      }
+                      ${isVoiceProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    aria-label={isRecording ? 'Stop voice input' : 'Start voice input'}
+                  >
+                    {isVoiceProcessing ? (
+                      <svg className="h-5 w-5 animate-spin text-[#38bdf8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M12 3a9 9 0 1 1-9 9" strokeLinecap="round" />
+                      </svg>
+                    ) : isRecording ? (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="8" y="8" width="8" height="8" rx="2" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                        <path d="M19 11a7 7 0 0 1-14 0" />
+                        <path d="M12 19v3" />
+                      </svg>
+                    )}
+                  </button>
                   <AnimatePresence>
                     {isSearching && (
                       <motion.div
@@ -517,6 +1165,17 @@ export default function SearchInterface() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  <div className="mt-3 min-h-[1.25rem] text-xs text-white/60">
+                    {voiceError ? (
+                      <span className="text-[#f87171]" role="alert">
+                        {voiceError}
+                      </span>
+                    ) : isVoiceProcessing ? (
+                      <span className="text-[#38bdf8]">Transcribing your voice…</span>
+                    ) : (
+                      <span>Tap the mic to speak your question.</span>
+                    )}
+                  </div>
                 </div>
                 <motion.button
                   type="submit"
