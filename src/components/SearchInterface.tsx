@@ -1099,7 +1099,7 @@ export default function SearchInterface() {
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.4em] text-white/50">Latest on Medium</p>
-                  <h2 className="text-2xl font-semibold text-white">Fresh writing from Aryan</h2>
+                  <h2 className="text-2xl font-semibold text-white">Fresh writing from me</h2>
                 </div>
                 {!isMediumLoading && (
                   <a
