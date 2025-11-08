@@ -10,6 +10,12 @@ import SkillClusterBars from './SkillClusterBars';
 import CyberBackground from './CyberBackground';
 import VoiceOrb from './VoiceOrb';
 
+type MediumPost = {
+  title: string;
+  link: string;
+  published: string;
+};
+
 export default function SearchInterface() {
   const MAX_QUERY_CHARS = 500;
   const SILENCE_THRESHOLD = 0.02;
@@ -34,6 +40,9 @@ export default function SearchInterface() {
   const [voiceGreetingActive, setVoiceGreetingActive] = useState(false);
   const [voiceGreetingPlayed, setVoiceGreetingPlayed] = useState(false);
   const [voiceAnswerShortened, setVoiceAnswerShortened] = useState(false);
+  const [mediumPosts, setMediumPosts] = useState<MediumPost[]>([]);
+  const [isMediumLoading, setIsMediumLoading] = useState(true);
+  const [mediumError, setMediumError] = useState<string | null>(null);
   const MAX_SPOKEN_CHARS = 600;
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -691,6 +700,18 @@ export default function SearchInterface() {
     };
   }, [stopVoicePlayback]);
 
+  const formatMediumDate = useCallback((iso: string) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.valueOf())) {
+      return 'Recently';
+    }
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  }, []);
+
   const telemetryMetrics = useMemo(() => {
     const aggregated = computeExperienceMetrics();
 
@@ -724,6 +745,43 @@ export default function SearchInterface() {
         accent: '#f3e8ff'
       }
     ];
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchMediumPosts = async () => {
+      try {
+        setIsMediumLoading(true);
+        setMediumError(null);
+        const response = await fetch('/api/medium?limit=3', { cache: 'no-store' });
+        const payload = (await response.json().catch(() => null)) as
+          | { posts?: MediumPost[]; error?: string }
+          | null;
+
+        if (!response.ok || !payload) {
+          throw new Error(payload?.error ?? 'Unable to load Medium posts.');
+        }
+
+        if (!cancelled) {
+          setMediumPosts(payload.posts ?? []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setMediumPosts([]);
+          setMediumError(err instanceof Error ? err.message : 'Unable to load Medium posts.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsMediumLoading(false);
+        }
+      }
+    };
+
+    void fetchMediumPosts();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -1030,6 +1088,78 @@ export default function SearchInterface() {
               </motion.div>
             </div>
           </motion.div>
+
+          {(mediumPosts.length > 0 || isMediumLoading || mediumError) && (
+            <motion.div
+              className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 shadow-[0_0_45px_rgba(56,189,248,0.08)] space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/50">Latest on Medium</p>
+                  <h2 className="text-2xl font-semibold text-white">Fresh writing from Aryan</h2>
+                </div>
+                {!isMediumLoading && (
+                  <a
+                    href={
+                      process.env.NEXT_PUBLIC_MEDIUM_URL ??
+                      (process.env.NEXT_PUBLIC_MEDIUM_USERNAME
+                        ? `https://medium.com/@${process.env.NEXT_PUBLIC_MEDIUM_USERNAME}`
+                        : undefined)
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-[#38bdf8] hover:text-white transition"
+                  >
+                    View all →
+                  </a>
+                )}
+              </div>
+              {mediumError && (
+                <p className="text-sm text-[#f87171]" role="alert">
+                  {mediumError}
+                </p>
+              )}
+              <div className="grid gap-4 md:grid-cols-3">
+                {isMediumLoading
+                  ? [0, 1, 2].map((item) => (
+                      <div
+                        key={`medium-skeleton-${item}`}
+                        className="rounded-2xl border border-white/5 bg-white/5 p-4 animate-pulse space-y-3"
+                      >
+                        <div className="h-3 w-24 rounded-full bg-white/10" />
+                        <div className="h-4 w-3/4 rounded-full bg-white/20" />
+                        <div className="h-4 w-2/3 rounded-full bg-white/10" />
+                      </div>
+                    ))
+                  : mediumPosts.length > 0
+                    ? mediumPosts.map((post) => (
+                        <a
+                          key={post.link}
+                          href={post.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-[#38bdf8]/60 hover:bg-white/[0.08]"
+                        >
+                          <span className="text-xs uppercase tracking-[0.35em] text-white/50">
+                            {formatMediumDate(post.published)}
+                          </span>
+                          <h3 className="text-base font-semibold text-white group-hover:text-[#38bdf8] transition">
+                            {post.title}
+                          </h3>
+                          <span className="text-xs text-[#38bdf8]">Read on Medium →</span>
+                        </a>
+                      ))
+                    : !mediumError && (
+                        <p className="text-sm text-white/60">
+                          No recent articles to show yet. Check back soon!
+                        </p>
+                      )}
+              </div>
+            </motion.div>
+          )}
 
           {voiceSessionStage === 'idle' && !isSearching && agentAnswer && (
             <motion.div
