@@ -1089,78 +1089,6 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          {(mediumPosts.length > 0 || isMediumLoading || mediumError) && (
-            <motion.div
-              className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 shadow-[0_0_45px_rgba(56,189,248,0.08)] space-y-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45 }}
-            >
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-white/50">Latest on Medium</p>
-                  <h2 className="text-2xl font-semibold text-white">Fresh writing from me</h2>
-                </div>
-                {!isMediumLoading && (
-                  <a
-                    href={
-                      process.env.NEXT_PUBLIC_MEDIUM_URL ??
-                      (process.env.NEXT_PUBLIC_MEDIUM_USERNAME
-                        ? `https://medium.com/@${process.env.NEXT_PUBLIC_MEDIUM_USERNAME}`
-                        : undefined)
-                    }
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm text-[#38bdf8] hover:text-white transition"
-                  >
-                    View all →
-                  </a>
-                )}
-              </div>
-              {mediumError && (
-                <p className="text-sm text-[#f87171]" role="alert">
-                  {mediumError}
-                </p>
-              )}
-              <div className="grid gap-4 md:grid-cols-3">
-                {isMediumLoading
-                  ? [0, 1, 2].map((item) => (
-                      <div
-                        key={`medium-skeleton-${item}`}
-                        className="rounded-2xl border border-white/5 bg-white/5 p-4 animate-pulse space-y-3"
-                      >
-                        <div className="h-3 w-24 rounded-full bg-white/10" />
-                        <div className="h-4 w-3/4 rounded-full bg-white/20" />
-                        <div className="h-4 w-2/3 rounded-full bg-white/10" />
-                      </div>
-                    ))
-                  : mediumPosts.length > 0
-                    ? mediumPosts.map((post) => (
-                        <a
-                          key={post.link}
-                          href={post.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="group relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-[#38bdf8]/60 hover:bg-white/[0.08]"
-                        >
-                          <span className="text-xs uppercase tracking-[0.35em] text-white/50">
-                            {formatMediumDate(post.published)}
-                          </span>
-                          <h3 className="text-base font-semibold text-white group-hover:text-[#38bdf8] transition">
-                            {post.title}
-                          </h3>
-                          <span className="text-xs text-[#38bdf8]">Read on Medium →</span>
-                        </a>
-                      ))
-                    : !mediumError && (
-                        <p className="text-sm text-white/60">
-                          No recent articles to show yet. Check back soon!
-                        </p>
-                      )}
-              </div>
-            </motion.div>
-          )}
-
           {voiceSessionStage === 'idle' && !isSearching && agentAnswer && (
             <motion.div
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.08)]"
@@ -1364,6 +1292,78 @@ export default function SearchInterface() {
               <span>Keyword search ready</span>
             </div> */}
           </motion.div>
+
+          {(mediumPosts.length > 0 || isMediumLoading || mediumError) && (
+            <motion.div
+              className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 shadow-[0_0_45px_rgba(56,189,248,0.08)] space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/50">Latest on Medium</p>
+                  <h2 className="text-2xl font-semibold text-white">Fresh writing from me</h2>
+                </div>
+                {!isMediumLoading && (
+                  <a
+                    href={
+                      process.env.NEXT_PUBLIC_MEDIUM_URL ??
+                      (process.env.NEXT_PUBLIC_MEDIUM_USERNAME
+                        ? `https://medium.com/@${process.env.NEXT_PUBLIC_MEDIUM_USERNAME}`
+                        : undefined)
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-[#38bdf8] hover:text-white transition"
+                  >
+                    View all →
+                  </a>
+                )}
+              </div>
+              {mediumError && (
+                <p className="text-sm text-[#f87171]" role="alert">
+                  {mediumError}
+                </p>
+              )}
+              <div className="grid gap-4 md:grid-cols-3">
+                {isMediumLoading
+                  ? [0, 1, 2].map((item) => (
+                      <div
+                        key={`medium-skeleton-${item}`}
+                        className="rounded-2xl border border-white/5 bg-white/5 p-4 animate-pulse space-y-3"
+                      >
+                        <div className="h-3 w-24 rounded-full bg-white/10" />
+                        <div className="h-4 w-3/4 rounded-full bg-white/20" />
+                        <div className="h-4 w-2/3 rounded-full bg-white/10" />
+                      </div>
+                    ))
+                  : mediumPosts.length > 0
+                    ? mediumPosts.map((post) => (
+                        <a
+                          key={post.link}
+                          href={post.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-[#38bdf8]/60 hover:bg-white/[0.08]"
+                        >
+                          <span className="text-xs uppercase tracking-[0.35em] text-white/50">
+                            {formatMediumDate(post.published)}
+                          </span>
+                          <h3 className="text-base font-semibold text-white group-hover:text-[#38bdf8] transition">
+                            {post.title}
+                          </h3>
+                          <span className="text-xs text-[#38bdf8]">Read on Medium →</span>
+                        </a>
+                      ))
+                    : !mediumError && (
+                        <p className="text-sm text-white/60">
+                          No recent articles to show yet. Check back soon!
+                        </p>
+                      )}
+              </div>
+            </motion.div>
+          )}
 
           <motion.div
             className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl shadow-[0_0_60px_rgba(56,189,248,0.06)]"
