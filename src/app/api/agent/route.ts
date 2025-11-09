@@ -14,6 +14,55 @@ const MAX_QUERY_CHARS = 500;
 const docs = buildResumeDocuments();
 let cachedEmbeddings: number[][] | null = null;
 
+const MAX_CONVERSATION_TURNS = 3;
+const MAX_FOLLOW_UP_CHARS = 800;
+
+type ConversationTurn = {
+  question: string;
+  answer: string;
+};
+
+function detectEnrichments(query: string): EnrichmentHint[] {
+  const normalized = query.toLowerCase();
+  const matches = new Set<EnrichmentHint>();
+
+  (Object.keys(ENRICHMENT_KEYWORDS) as EnrichmentHint[]).forEach((key) => {
+    if (ENRICHMENT_KEYWORDS[key].some((keyword) => normalized.includes(keyword))) {
+      matches.add(key);
+    }
+  });
+
+  return Array.from(matches);
+}
+
+function sanitizeConversationTurns(turns: unknown): ConversationTurn[] {
+  if (!Array.isArray(turns)) {
+    return [];
+  }
+
+  const sanitized = turns
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+
+      const question = String((entry as ConversationTurn).question ?? "").trim();
+      const answer = String((entry as ConversationTurn).answer ?? "").trim();
+
+      if (!question || !answer) {
+        return null;
+      }
+
+      return {
+        question: question.slice(0, MAX_QUERY_CHARS),
+        answer: answer.slice(0, MAX_FOLLOW_UP_CHARS),
+      } satisfies ConversationTurn;
+    })
+    .filter((turn): turn is ConversationTurn => Boolean(turn));
+
+  return sanitized.slice(-MAX_CONVERSATION_TURNS);
+}
+
 const SECTION_KEYWORDS: Record<string, string[]> = {
   summary: ["summary", "overview", "bio"],
   education: ["education", "school", "college", "university", "academic"],
@@ -24,6 +73,38 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   research: ["research", "paper", "publication"],
 };
 const SECTION_MATCH_BOOST = 0.15;
+
+const ENRICHMENT_KEYWORDS = {
+  skills: [
+    "skill",
+    "skills",
+    "tech stack",
+    "technology",
+    "technologies",
+    "stack",
+    "tools",
+    "languages",
+    "ml",
+    "ai",
+    "cloud",
+  ],
+  impact: [
+    "impact",
+    "result",
+    "results",
+    "metrics",
+    "numbers",
+    "outcome",
+    "outcomes",
+    "revenue",
+    "users",
+    "scale",
+    "growth",
+    "performance",
+  ],
+} as const;
+
+type EnrichmentHint = keyof typeof ENRICHMENT_KEYWORDS;
 
 function getClient(): OpenAI {
   if (!process.env.OPENAI_API_KEY) {
@@ -110,7 +191,10 @@ function buildContextSection(topDocs: RankedDoc[]): string {
 export async function POST(request: NextRequest) {
   try {
     const client = getClient();
-    const { query } = (await request.json()) as { query?: string };
+    const { query, contextTurns } = (await request.json()) as {
+      query?: string;
+      contextTurns?: ConversationTurn[];
+    };
 
     if (!query || !query.trim()) {
       return NextResponse.json(
@@ -128,6 +212,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const sanitizedTurns = sanitizeConversationTurns(contextTurns);
     const docEmbeddings = await ensureEmbeddings(client);
 
     const queryEmbeddingResponse = await client.embeddings.create({
@@ -138,6 +223,7 @@ export async function POST(request: NextRequest) {
     const queryEmbedding = queryEmbeddingResponse.data[0]?.embedding ?? [];
 
     const normalizedQuery = query.toLowerCase();
+    const enrichmentHints = detectEnrichments(normalizedQuery);
     const matchedSections = new Set<string>();
 
     Object.entries(SECTION_KEYWORDS).forEach(([section, keywords]) => {
@@ -163,10 +249,19 @@ export async function POST(request: NextRequest) {
         answer:
           "I could not find relevant information in the resume. Could you try rephrasing your question?",
         sources: [],
+        enrichment: enrichmentHints,
       });
     }
 
     const context = buildContextSection(rankedDocs);
+    const followUpContext = sanitizedTurns.length
+      ? `Previous conversation:\n${sanitizedTurns
+          .map(
+            (turn, index) =>
+              `Q${index + 1}: ${turn.question}\nA${index + 1}: ${turn.answer}`
+          )
+          .join("\n\n")}\n\n`
+      : "";
 
     const response = await client.responses.create({
       model: CHAT_MODEL,
@@ -186,7 +281,7 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: "input_text",
-              text: `Context:\n${context}\n\nQuestion: ${query}`,
+              text: `${followUpContext}Context:\n${context}\n\nQuestion: ${query}`,
             },
           ],
         },
@@ -195,17 +290,18 @@ export async function POST(request: NextRequest) {
 
     const answer = response.output_text?.trim();
 
-  return NextResponse.json({
-    answer:
-      answer ??
-      "I could not generate an answer right now. Please try again shortly.",
-    sources: rankedDocs.map(({ doc, similarity }) => ({
-      id: doc.id,
-      title: doc.title,
-      section: doc.section,
-      similarity,
-    })),
-  });
+    return NextResponse.json({
+      answer:
+        answer ??
+        "I could not generate an answer right now. Please try again shortly.",
+      sources: rankedDocs.map(({ doc, similarity }) => ({
+        id: doc.id,
+        title: doc.title,
+        section: doc.section,
+        similarity,
+      })),
+      enrichment: enrichmentHints,
+    });
   } catch (error) {
     console.error("Error in agent route:", error);
     return NextResponse.json(

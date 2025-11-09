@@ -16,6 +16,8 @@ type MediumPost = {
   published: string;
 };
 
+type EnrichmentHint = 'skills' | 'impact';
+
 export default function SearchInterface() {
   const MAX_QUERY_CHARS = 500;
   const SILENCE_THRESHOLD = 0.02;
@@ -26,6 +28,9 @@ export default function SearchInterface() {
   const [agentAnswer, setAgentAnswer] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState('');
+  type ConversationTurn = { question: string; answer: string };
+  const [conversationTurns, setConversationTurns] = useState<ConversationTurn[]>([]);
+  const [answerEnrichment, setAnswerEnrichment] = useState<EnrichmentHint[]>([]);
   const [missionClock, setMissionClock] = useState('--:--:--');
   const [isRecording, setIsRecording] = useState(false);
   const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
@@ -55,6 +60,7 @@ export default function SearchInterface() {
   const silenceStartRef = useRef<number | null>(null);
   const isRecordingRef = useRef(false);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
+  const queryInputRef = useRef<HTMLInputElement | null>(null);
   const replyAudioUrlRef = useRef<string | null>(null);
   const hasDetectedSpeechRef = useRef(false);
   const pendingRecorderStartRef = useRef<(() => void) | null>(null);
@@ -381,7 +387,10 @@ export default function SearchInterface() {
   }, [SILENCE_THRESHOLD, SILENCE_TIMEOUT_MS, stopVoiceCapture]);
 
   const queryAgent = useCallback(
-    async (query: string, options?: { viaVoice?: boolean }) => {
+    async (
+      query: string,
+      options?: { viaVoice?: boolean; contextTurns?: ConversationTurn[] | undefined }
+    ) => {
       const normalizedQuery = query.trim();
       if (!normalizedQuery) {
         if (!options?.viaVoice) {
@@ -393,6 +402,7 @@ export default function SearchInterface() {
         setAgentAnswer('');
         setLastQuery('');
         setError(null);
+        setAnswerEnrichment([]);
         return;
       }
 
@@ -404,6 +414,8 @@ export default function SearchInterface() {
         setAgentAnswer('');
       }
 
+      const payloadTurns = options?.contextTurns?.slice(-3) ?? [];
+
       setReplyAudioError(null);
       setIsSearching(true);
       setActiveSection('');
@@ -411,6 +423,7 @@ export default function SearchInterface() {
         setAgentAnswer('');
       }
       setError(null);
+      setAnswerEnrichment([]);
       if (!options?.viaVoice) {
         setLastQuery(normalizedQuery);
       }
@@ -425,7 +438,10 @@ export default function SearchInterface() {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ query: normalizedQuery })
+          body: JSON.stringify({
+            query: normalizedQuery,
+            contextTurns: payloadTurns.length ? payloadTurns : undefined
+          })
         });
 
         if (!response.ok) {
@@ -435,9 +451,11 @@ export default function SearchInterface() {
 
         const payload = (await response.json()) as {
           answer?: string;
+          enrichment?: EnrichmentHint[];
         };
 
         const answerText = payload.answer ?? '';
+        setAnswerEnrichment(payload.enrichment ?? []);
 
         if (options?.viaVoice) {
           setVoiceSessionAnswer(answerText);
@@ -454,10 +472,18 @@ export default function SearchInterface() {
           setVoiceSessionAnswer('');
           stopVoicePlayback();
         }
+
+        if (answerText) {
+          setConversationTurns((prev) => {
+            const next = [...prev, { question: normalizedQuery, answer: answerText }];
+            return next.slice(-3);
+          });
+        }
       } catch (err) {
         console.error('Agent query failed', err);
         setAgentAnswer('');
         setError(err instanceof Error ? err.message : 'Unable to query the AI agent.');
+        setAnswerEnrichment([]);
         if (options?.viaVoice) {
           setVoiceSessionStage('idle');
           setVoiceSessionAnswer('');
@@ -712,8 +738,10 @@ export default function SearchInterface() {
     });
   }, []);
 
+  const aggregatedMetrics = useMemo(() => computeExperienceMetrics(), []);
+
   const telemetryMetrics = useMemo(() => {
-    const aggregated = computeExperienceMetrics();
+    const aggregated = aggregatedMetrics;
 
     return [
       {
@@ -745,7 +773,31 @@ export default function SearchInterface() {
         accent: '#f3e8ff'
       }
     ];
-  }, []);
+  }, [aggregatedMetrics]);
+
+  const impactHighlights = useMemo(() => {
+    const aggregated = aggregatedMetrics;
+    return [
+      {
+        label: 'Experience Depth',
+        value: `${aggregated.experienceYears.toFixed(1)} yrs`,
+        detail: `${aggregated.experienceMonths} months across ML platforms + infra`,
+        accent: '#38bdf8'
+      },
+      {
+        label: 'Delivery Velocity',
+        value: `${aggregated.projectScore}/100`,
+        detail: `${aggregated.projectPoints} quantified project bullet points`,
+        accent: '#a855f7'
+      },
+      {
+        label: 'Research Signal',
+        value: `${aggregated.researchCount}`,
+        detail: 'peer-reviewed or publication-grade outputs',
+        accent: '#fbbf24'
+      }
+    ];
+  }, [aggregatedMetrics]);
 
   useEffect(() => {
     let cancelled = false;
@@ -789,8 +841,13 @@ export default function SearchInterface() {
     setVoiceSessionStage('idle');
     setVoiceSessionAnswer('');
     stopVoicePlayback();
-    void queryAgent(searchQuery, { viaVoice: false });
+    const turns = conversationTurns.length ? conversationTurns : undefined;
+    void queryAgent(searchQuery, { viaVoice: false, contextTurns: turns });
   };
+
+  const handleResetConversation = useCallback(() => {
+    setConversationTurns([]);
+  }, []);
 
   const handleSectionSelect = (section: string) => {
     const prompt = `Summarize about your ${section} `;
@@ -799,7 +856,8 @@ export default function SearchInterface() {
     setVoiceSessionStage('idle');
     setVoiceSessionAnswer('');
     stopVoicePlayback();
-    void queryAgent(prompt, { viaVoice: false });
+    const turns = conversationTurns.length ? conversationTurns : undefined;
+    void queryAgent(prompt, { viaVoice: false, contextTurns: turns });
   };
 
   return (
@@ -847,22 +905,22 @@ export default function SearchInterface() {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        strong: ({ node, ...props }) => (
+                        strong: (props) => (
                           <span className="text-white font-semibold" {...props} />
                         ),
-                        em: ({ node, ...props }) => (
+                        em: (props) => (
                           <span className="italic text-white/80" {...props} />
                         ),
-                        p: ({ node, ...props }) => (
+                        p: (props) => (
                           <p className="mb-3 last:mb-0" {...props} />
                         ),
-                        ul: ({ node, ...props }) => (
+                        ul: (props) => (
                           <ul className="list-disc pl-5 space-y-2" {...props} />
                         ),
-                        ol: ({ node, ...props }) => (
+                        ol: (props) => (
                           <ol className="list-decimal pl-5 space-y-2" {...props} />
                         ),
-                        li: ({ node, ...props }) => <li className="pl-1" {...props} />
+                        li: (props) => <li className="pl-1" {...props} />
                       }}
                     >
                       {voiceSessionAnswer || agentAnswer}
@@ -1110,27 +1168,90 @@ export default function SearchInterface() {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      strong: ({ node, ...props }) => (
+                      strong: (props) => (
                         <span className="text-white font-semibold" {...props} />
                       ),
-                      em: ({ node, ...props }) => (
+                      em: (props) => (
                         <span className="italic text-white/80" {...props} />
                       ),
-                      p: ({ node, ...props }) => (
+                      p: (props) => (
                         <p className="mb-3 last:mb-0" {...props} />
                       ),
-                      ul: ({ node, ...props }) => (
+                      ul: (props) => (
                         <ul className="list-disc pl-5 space-y-2" {...props} />
                       ),
-                      ol: ({ node, ...props }) => (
+                      ol: (props) => (
                         <ol className="list-decimal pl-5 space-y-2" {...props} />
                       ),
-                      li: ({ node, ...props }) => <li className="pl-1" {...props} />
+                      li: (props) => <li className="pl-1" {...props} />
                     }}
                   >
                     {agentAnswer}
                   </ReactMarkdown>
                 </div>
+                {conversationTurns.length > 0 && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResetConversation}
+                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/70 transition hover:border-white/40"
+                    >
+                      Reset conversation
+                    </button>
+                  </div>
+                )}
+                {answerEnrichment.length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/50">
+                      Context Boosters
+                    </p>
+                    <div className="space-y-4">
+                      {answerEnrichment.includes('skills') && (
+                        <motion.div
+                          className="rounded-3xl border border-white/10 bg-white/5 p-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <SkillClusterBars />
+                        </motion.div>
+                      )}
+                      {answerEnrichment.includes('impact') && (
+                        <motion.div
+                          className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#0f172a] to-[#020617] p-4"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+                              Measurable Impact
+                            </p>
+                            <span className="text-[10px] uppercase tracking-[0.4em] text-white/30">
+                              resume metrics
+                            </span>
+                          </div>
+                          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                            {impactHighlights.map((highlight) => (
+                              <div
+                                key={highlight.label}
+                                className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                              >
+                                <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">
+                                  {highlight.label}
+                                </p>
+                                <p className="mt-2 text-2xl font-semibold" style={{ color: highlight.accent }}>
+                                  {highlight.value}
+                                </p>
+                                <p className="mt-2 text-xs text-white/60 leading-relaxed">
+                                  {highlight.detail}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -1174,6 +1295,7 @@ export default function SearchInterface() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    ref={queryInputRef}
                     className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-20 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
                     focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
                     placeholder="What do you want to know about me?"
