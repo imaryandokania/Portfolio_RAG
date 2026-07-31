@@ -1,9 +1,9 @@
 export const resumeData = {
   name: "Aryan Dokania",
-  title: "Software Engineer",
+  title: "Research Engineer @ Microsoft",
   contact: {
     // phone: "+1 (925)750-0470",
-    location: "San Diego, CA",
+    location: "Seattle, WA",
     email: "aryandokania2001@gmail.com",
     linkedin: "linkedin.com/in/aryandokania",
     github: "github.com/imaryandokania",
@@ -11,8 +11,8 @@ export const resumeData = {
   },
   sections: {
     summary: [
-      "Software engineer with experience across large-scale networking, applied machine learning, and distributed systems.",
-      "Focused on building reliable infrastructure, intelligent developer tooling, and high-availability services."
+      "Research Engineer at Microsoft working on Copilot Studio, with experience across applied machine learning, large-scale networking, and distributed systems.",
+      "Focused on building agentic AI systems, reliable infrastructure, and intelligent developer tooling."
     ],
     education: [
       {
@@ -31,6 +31,16 @@ export const resumeData = {
       }
     ],
     experience: [
+      {
+        title: "Research Engineer",
+        company: "Microsoft",
+        location: "Redmond, WA",
+        period: "Jan. 2026 - Present",
+        points: [
+          "Research Engineer on the Copilot Studio team, building agentic AI experiences and LLM-powered workflows.",
+          "Working across orchestration, evaluation, and tooling for production copilot agents at scale."
+        ]
+      },
       {
         title: "Software Engineer II Intern",
         company: "Cisco Systems",
@@ -160,7 +170,7 @@ export const resumeData = {
       {
         title: "Improving Learning to Optimize Using Parameter Symmetries",
         authors: ["Guy Zamir", "Aryan Dokania", "Bo Zhao", "Rose Yu"],
-        venue: "ICLR",
+        venue: "ICLR Workshop on Neural Network Weights as a New Data Modality",
         year: "2025",
         link: "https://arxiv.org/abs/2504.15399"
       },

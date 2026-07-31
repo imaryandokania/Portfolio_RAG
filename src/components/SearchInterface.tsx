@@ -9,6 +9,8 @@ import { computeExperienceMetrics } from '../utils/resumeMetrics';
 import SkillClusterBars from './SkillClusterBars';
 import CyberBackground from './CyberBackground';
 import VoiceOrb from './VoiceOrb';
+import TerminalBoot from './TerminalBoot';
+import ResumeSections from './ResumeSections';
 
 type MediumPost = {
   title: string;
@@ -174,6 +176,24 @@ export default function SearchInterface() {
         items: skills.cloudTools?.slice(0, 4) ?? []
       }
     ];
+  }, []);
+
+  useEffect(() => {
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key !== '/') {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      event.preventDefault();
+      queryInputRef.current?.focus();
+      queryInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
   }, []);
 
   useEffect(() => {
@@ -1014,6 +1034,20 @@ export default function SearchInterface() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_60%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(168,85,247,0.18),_transparent_55%)] mix-blend-screen" />
+            <div className="relative flex items-center gap-2 border-b border-white/10 bg-black/50 px-5 py-3">
+              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <p className="ml-3 font-mono text-xs text-white/50">
+                <span className="text-emerald-400">aryan@portfolio</span>
+                <span className="text-white/40">:~$ </span>
+                <span className="text-white/80">./init_portfolio --mode=rag</span>
+              </p>
+              <p className="ml-auto hidden items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-emerald-300 sm:flex">
+                <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                online
+              </p>
+            </div>
             <div className="grid gap-8 lg:grid-cols-[1.3fr_0.9fr] relative p-8 lg:p-12">
               <div className="space-y-6">
                 <div className="text-left space-y-4">
@@ -1033,16 +1067,24 @@ export default function SearchInterface() {
                   >
                     {resumeData.name}
                   </motion.h1>
-                  {heroEducation && (
-                    <motion.p 
-                      className="text-[#38bdf8] text-lg md:text-xl"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      {heroEducation}
-                    </motion.p>
-                  )}
+                  <motion.p
+                    className="text-[#38bdf8] text-lg md:text-xl"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {resumeData.title}
+                    {heroEducation && (
+                      <span className="text-white/50"> · {heroEducation}</span>
+                    )}
+                  </motion.p>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    <TerminalBoot />
+                  </motion.div>
                 </div>
                 {resumeData.sections.summary && (
                   <motion.p 
@@ -1355,7 +1397,11 @@ export default function SearchInterface() {
                     ) : isVoiceProcessing ? (
                       <span className="text-[#38bdf8]">Transcribing your voice…</span>
                     ) : (
-                      <span>Tap the mic to speak your question.</span>
+                      <span>
+                        Tap the mic to speak, or press{' '}
+                        <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300">/</kbd>{' '}
+                        to type your question.
+                      </span>
                     )}
                   </div>
                 </div>
@@ -1402,8 +1448,8 @@ export default function SearchInterface() {
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.12),_transparent_65%)]" />
                   <div className="relative space-y-1.5">
-                    <p className="text-[10px] uppercase tracking-[0.35em] text-white/50">Jump To</p>
-                    <p className="text-sm font-semibold text-white">{section}</p>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-emerald-400/70">$ ask --about</p>
+                    <p className="font-mono text-sm font-semibold text-white">{section}</p>
                   </div>
                 </motion.button>
               ))}
@@ -1541,6 +1587,8 @@ export default function SearchInterface() {
               <SkillClusterBars />
             </motion.div>
           )}
+
+          <ResumeSections />
 
           {/* Results Area */}
           <AnimatePresence>

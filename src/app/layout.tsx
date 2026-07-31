@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap"
+});
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://aryandokania.vercel.app/";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Aryan Dokania",
+  title: "Aryan Dokania — Research Engineer @ Microsoft",
   description:
-    "Interactive resume for Aryan Dokania featuring AI-assisted search across experience, projects, and skills.",
+    "Aryan Dokania — Research Engineer at Microsoft (Copilot Studio), MS CS from UC San Diego. Interactive AI-powered portfolio with RAG search across experience, projects, and research.",
   applicationName: "Aryan Dokania",
   authors: [{ name: "Aryan Dokania" }],
   keywords: [
@@ -56,7 +63,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className={`${jetbrainsMono.variable} antialiased`}>
         {children}
       </body>
     </html>
