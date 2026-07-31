@@ -5,62 +5,69 @@ import { OrbitControls, Line, Html } from '@react-three/drei';
 import { Suspense, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
+type NodeType = 'center' | 'experience' | 'project' | 'research';
+
 type GraphNode = {
   id: string;
   label: string;
   sub?: string;
-  type: 'center' | 'experience' | 'project' | 'research';
+  type: NodeType;
   position: [number, number, number];
   targetSection?: string;
 };
 
-const COLORS: Record<GraphNode['type'], string> = {
+const COLORS: Record<NodeType, string> = {
   center: '#ffffff',
   experience: '#34d399',
   project: '#38bdf8',
   research: '#7dd3fc'
 };
 
-const NODE_SIZE: Record<GraphNode['type'], number> = {
-  center: 0.34,
-  experience: 0.22,
-  project: 0.18,
-  research: 0.16
+const NODE_SIZE: Record<NodeType, number> = {
+  center: 0.3,
+  experience: 0.16,
+  project: 0.14,
+  research: 0.13
 };
 
+// Point on a circle of radius r, tilted by t around the X axis
+function orbitPoint(r: number, t: number, angle: number): [number, number, number] {
+  return [r * Math.cos(angle), -r * Math.sin(angle) * Math.sin(t), r * Math.sin(angle) * Math.cos(t)];
+}
+
+function orbitRing(r: number, t: number, segments = 96): [number, number, number][] {
+  const pts: [number, number, number][] = [];
+  for (let i = 0; i <= segments; i += 1) {
+    pts.push(orbitPoint(r, t, (i / segments) * Math.PI * 2));
+  }
+  return pts;
+}
+
+const RINGS: { type: NodeType; radius: number; tilt: number }[] = [
+  { type: 'experience', radius: 3.1, tilt: 0.18 },
+  { type: 'project', radius: 2.2, tilt: -0.5 },
+  { type: 'research', radius: 2.65, tilt: 0.95 }
+];
+
 function buildNodes(): GraphNode[] {
-  const ring = (
+  const onRing = (
     items: { label: string; sub?: string }[],
-    radius: number,
-    y: number,
-    type: GraphNode['type'],
+    ring: { type: NodeType; radius: number; tilt: number },
     targetSection: string,
     phase = 0
   ): GraphNode[] =>
-    items.map((item, i) => {
-      const angle = phase + (i / items.length) * Math.PI * 2;
-      return {
-        id: `${type}-${i}`,
-        label: item.label,
-        sub: item.sub,
-        type,
-        position: [
-          Math.cos(angle) * radius,
-          y + Math.sin(angle * 2.3) * 0.35,
-          Math.sin(angle) * radius
-        ] as [number, number, number],
-        targetSection
-      };
-    });
+    items.map((item, i) => ({
+      id: `${ring.type}-${i}`,
+      label: item.label,
+      sub: item.sub,
+      type: ring.type,
+      position: orbitPoint(ring.radius, ring.tilt, phase + (i / items.length) * Math.PI * 2),
+      targetSection
+    }));
 
   return [
-    {
-      id: 'center',
-      label: 'ARYAN',
-      type: 'center',
-      position: [0, 0, 0]
-    },
-    ...ring(
+    { id: 'center', label: 'ARYAN', sub: 'research engineer', type: 'center', position: [0, 0, 0] },
+    ...onRing(
       [
         { label: 'Microsoft', sub: 'Copilot Studio · 2026' },
         { label: 'UCSD CSE', sub: 'AI Researcher · 2026' },
@@ -68,35 +75,29 @@ function buildNodes(): GraphNode[] {
         { label: 'Rose Yu Lab', sub: 'Researcher · 2024' },
         { label: 'Oracle', sub: 'SDE 1 · 2023' }
       ],
-      3.1,
-      0.5,
+      RINGS[0],
       'experience',
-      'experience',
-      0.4
+      0.3
     ),
-    ...ring(
+    ...onRing(
       [
         { label: 'DASH Streaming', sub: 'Go · AWS' },
         { label: 'gRPC LB', sub: 'Go · K8s' },
         { label: 'JIRA Search', sub: 'LLaMA 3.1' }
       ],
-      2.4,
-      -1.2,
-      'project',
+      RINGS[1],
       'projects',
-      1.6
+      1.2
     ),
-    ...ring(
+    ...onRing(
       [
         { label: 'ICLR WS 2025', sub: 'L2O Symmetries' },
         { label: 'i-PACT 2023', sub: 'Grammar Correction' },
         { label: 'SSIC 2023', sub: 'Secure Sharing' }
       ],
-      2.7,
-      1.6,
+      RINGS[2],
       'research',
-      'research',
-      2.9
+      2.4
     )
   ];
 }
@@ -113,25 +114,23 @@ function Node({
   onSelect: (node: GraphNode) => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const baseY = node.position[1];
+  const targetScale = useRef(new THREE.Vector3(1, 1, 1));
 
-  useFrame((state) => {
+  useFrame(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    // gentle float
-    mesh.position.y = baseY + Math.sin(state.clock.elapsedTime * 0.8 + node.position[0]) * 0.08;
-    // smooth hover scale
-    const target = hovered ? 1.5 : 1;
-    mesh.scale.lerp(new THREE.Vector3(target, target, target), 0.12);
+    const s = hovered ? 1.7 : 1;
+    targetScale.current.set(s, s, s);
+    mesh.scale.lerp(targetScale.current, 0.15);
   });
 
   const color = COLORS[node.type];
+  const isCenter = node.type === 'center';
 
   return (
-    <group>
+    <group position={node.position}>
       <mesh
         ref={meshRef}
-        position={node.position}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(node);
@@ -139,7 +138,7 @@ function Node({
         onPointerOver={(e) => {
           e.stopPropagation();
           onHover(node.id);
-          document.body.style.cursor = node.targetSection ? 'pointer' : 'default';
+          if (node.targetSection) document.body.style.cursor = 'pointer';
         }}
         onPointerOut={() => {
           onHover(null);
@@ -147,55 +146,49 @@ function Node({
         }}
       >
         <sphereGeometry args={[NODE_SIZE[node.type], 24, 24]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={hovered ? 1.6 : 0.55}
-          roughness={0.3}
-        />
+        <meshBasicMaterial color={color} transparent opacity={hovered || isCenter ? 1 : 0.85} />
       </mesh>
-      <Html
-        position={[node.position[0], node.position[1] + NODE_SIZE[node.type] + 0.22, node.position[2]]}
-        center
-        distanceFactor={9}
-        style={{ pointerEvents: 'none' }}
-      >
+      {/* soft halo */}
+      <mesh>
+        <sphereGeometry args={[NODE_SIZE[node.type] * 1.9, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={hovered ? 0.25 : 0.08} depthWrite={false} />
+      </mesh>
+      <Html center position={[0, -(NODE_SIZE[node.type] + 0.32), 0]} style={{ pointerEvents: 'none' }} zIndexRange={[10, 0]}>
         <div
-          className={`whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-[10px] leading-tight transition-colors ${
-            hovered
-              ? 'border-white/40 bg-black/90 text-white'
-              : 'border-white/10 bg-black/60 text-white/70'
-          }`}
+          className="whitespace-nowrap text-center font-mono leading-tight"
+          style={{ textShadow: '0 0 6px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.9)' }}
         >
-          <span style={{ color }}>{node.label}</span>
-          {hovered && node.sub && <span className="ml-1 text-white/50">{node.sub}</span>}
+          <p style={{ color, fontSize: isCenter ? 12 : 10, fontWeight: 600, letterSpacing: '0.05em' }}>
+            {node.label}
+          </p>
+          {(hovered || isCenter) && node.sub && (
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9 }}>{node.sub}</p>
+          )}
         </div>
       </Html>
     </group>
   );
 }
 
-function Graph() {
+function Scene() {
   const nodes = useMemo(buildNodes, []);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
-  const center = nodes[0];
-  const edges = useMemo(() => {
-    const list: { from: [number, number, number]; to: [number, number, number]; color: string }[] = [];
-    nodes.slice(1).forEach((n) => {
-      list.push({ from: center.position, to: n.position, color: COLORS[n.type] });
-    });
-    // chronological career path: Oracle → Rose Yu Lab → Cisco → UCSD CSE → Microsoft
-    const path = ['experience-4', 'experience-3', 'experience-2', 'experience-1', 'experience-0'];
-    for (let i = 0; i < path.length - 1; i += 1) {
-      const a = nodes.find((n) => n.id === path[i]);
-      const b = nodes.find((n) => n.id === path[i + 1]);
-      if (a && b) {
-        list.push({ from: a.position, to: b.position, color: '#34d399' });
-      }
+  // slow idle spin of the whole system (OrbitControls autoRotate spins the camera instead;
+  // we spin the group so labels stay readable while rings sweep through space)
+  useFrame((_, delta) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.12;
     }
-    return list;
-  }, [nodes, center.position]);
+  });
+
+  const careerPath = useMemo(() => {
+    const order = ['experience-4', 'experience-3', 'experience-2', 'experience-1', 'experience-0'];
+    return order
+      .map((id) => nodes.find((n) => n.id === id)?.position)
+      .filter((p): p is [number, number, number] => Boolean(p));
+  }, [nodes]);
 
   const handleSelect = (node: GraphNode) => {
     if (!node.targetSection) return;
@@ -204,36 +197,33 @@ function Graph() {
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[5, 5, 5]} intensity={40} color="#38bdf8" />
-      <pointLight position={[-5, -3, -5]} intensity={25} color="#34d399" />
-      {edges.map((edge, i) => (
-        <Line
-          key={i}
-          points={[edge.from, edge.to]}
-          color={edge.color}
-          lineWidth={1}
-          transparent
-          opacity={0.22}
-        />
-      ))}
-      {nodes.map((node) => (
-        <Node
-          key={node.id}
-          node={node}
-          hovered={hoveredId === node.id}
-          onHover={setHoveredId}
-          onSelect={handleSelect}
-        />
-      ))}
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        autoRotate
-        autoRotateSpeed={0.7}
-        minPolarAngle={Math.PI * 0.25}
-        maxPolarAngle={Math.PI * 0.75}
-      />
+      <group ref={groupRef}>
+        {/* orbit rings */}
+        {RINGS.map((ring) => (
+          <Line
+            key={ring.type}
+            points={orbitRing(ring.radius, ring.tilt)}
+            color={COLORS[ring.type]}
+            lineWidth={1}
+            transparent
+            opacity={0.18}
+          />
+        ))}
+        {/* chronological career path */}
+        {careerPath.length > 1 && (
+          <Line points={careerPath} color="#34d399" lineWidth={1.5} transparent opacity={0.3} dashed dashSize={0.15} gapSize={0.1} />
+        )}
+        {nodes.map((node) => (
+          <Node
+            key={node.id}
+            node={node}
+            hovered={hoveredId === node.id}
+            onHover={setHoveredId}
+            onSelect={handleSelect}
+          />
+        ))}
+      </group>
+      <OrbitControls enableZoom={false} enablePan={false} />
     </>
   );
 }
@@ -255,9 +245,9 @@ export default function CareerGraph() {
         </p>
       </div>
       <div className="h-[380px] md:h-[440px]">
-        <Canvas camera={{ position: [0, 1.2, 7.5], fov: 50 }} dpr={[1, 2]}>
+        <Canvas camera={{ position: [0, 1.6, 7], fov: 45 }} dpr={[1, 2]}>
           <Suspense fallback={null}>
-            <Graph />
+            <Scene />
           </Suspense>
         </Canvas>
       </div>
