@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
           .join("\n\n")}\n\n`
       : "";
 
-    const inputMessages = [
+    const inputMessages: OpenAI.Responses.ResponseInput = [
         {
           role: "system",
           content: [
