@@ -1,4 +1,5 @@
 import { resumeData } from "../data/resumeData";
+import { buildBrainDocuments } from "../data/brainData";
 
 export type ResumeDocument = {
   id: string;
@@ -120,6 +121,9 @@ export function buildResumeDocuments(): ResumeDocument[] {
       points: paper.authors,
     });
   });
+
+  // Brain layer: stories, opinions, deep-dives, FAQs — the agent's personality
+  buildBrainDocuments().forEach((doc) => docs.push(doc));
 
   return docs;
 }
