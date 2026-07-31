@@ -67,6 +67,56 @@ a {
   }
 }
 
+/* Glitch effect for the hero name */
+.glitch {
+  position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glitch::before {
+  color: #34d399;
+  z-index: -1;
+  animation: glitch-shift-a 6s infinite steps(1);
+}
+
+.glitch::after {
+  color: #f472b6;
+  z-index: -2;
+  animation: glitch-shift-b 6s infinite steps(1);
+}
+
+@keyframes glitch-shift-a {
+  0%, 93% { opacity: 0; transform: none; clip-path: none; }
+  94% { opacity: 0.85; transform: translate(-4px, 2px); clip-path: inset(15% 0 55% 0); }
+  95% { opacity: 0.85; transform: translate(3px, -2px); clip-path: inset(60% 0 10% 0); }
+  96% { opacity: 0.85; transform: translate(-2px, 1px); clip-path: inset(35% 0 40% 0); }
+  97%, 100% { opacity: 0; transform: none; clip-path: none; }
+}
+
+@keyframes glitch-shift-b {
+  0%, 93% { opacity: 0; transform: none; clip-path: none; }
+  94% { opacity: 0.85; transform: translate(4px, -2px); clip-path: inset(50% 0 20% 0); }
+  95% { opacity: 0.85; transform: translate(-3px, 2px); clip-path: inset(10% 0 70% 0); }
+  96% { opacity: 0.85; transform: translate(2px, -1px); clip-path: inset(70% 0 5% 0); }
+  97%, 100% { opacity: 0; transform: none; clip-path: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch::before,
+  .glitch::after {
+    animation: none;
+  }
+}
+
 /* Terminal cursor */
 .terminal-cursor {
   display: inline-block;

@@ -11,6 +11,7 @@ import CyberBackground from './CyberBackground';
 import VoiceOrb from './VoiceOrb';
 import TerminalBoot from './TerminalBoot';
 import ResumeSections from './ResumeSections';
+import MatrixRain from './MatrixRain';
 
 type MediumPost = {
   title: string;
@@ -861,6 +862,30 @@ export default function SearchInterface() {
     setVoiceSessionStage('idle');
     setVoiceSessionAnswer('');
     stopVoicePlayback();
+
+    const normalized = searchQuery.trim().toLowerCase();
+    if (normalized.startsWith('sudo')) {
+      setLastQuery(searchQuery.trim());
+      setError(null);
+      setAnswerEnrichment([]);
+      setAgentAnswer(
+        [
+          '```',
+          '[sudo] password for recruiter: ********',
+          'ACCESS GRANTED 🔓',
+          '',
+          '> initiating hire_sequence.sh ...',
+          '> compiling 3 publications ......... done',
+          '> loading Microsoft · Cisco · Oracle experience ... done',
+          '> deploying resume to your inbox ... ready',
+          '```',
+          '',
+          `Nice try — you found the easter egg. Skip the queue: [email me](mailto:${resumeData.contact.email}) or ping me on [LinkedIn](https://${resumeData.contact.linkedin}).`
+        ].join('\n')
+      );
+      return;
+    }
+
     const turns = conversationTurns.length ? conversationTurns : undefined;
     void queryAgent(searchQuery, { viaVoice: false, contextTurns: turns });
   };
@@ -1006,6 +1031,7 @@ export default function SearchInterface() {
         )}
       </AnimatePresence>
       <CyberBackground />
+      <MatrixRain />
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(99,102,241,0.15),_transparent_60%)]" />
@@ -1059,8 +1085,9 @@ export default function SearchInterface() {
                   >
                     Portfolio
                   </motion.div>
-                  <motion.h1 
-                    className="text-5xl md:text-6xl font-bold text-white leading-tight cyberpunk-glow"
+                  <motion.h1
+                    className="glitch text-5xl md:text-6xl font-bold text-white leading-tight cyberpunk-glow"
+                    data-text={resumeData.name}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
@@ -1225,7 +1252,17 @@ export default function SearchInterface() {
                       ol: (props) => (
                         <ol className="list-decimal pl-5 space-y-2" {...props} />
                       ),
-                      li: (props) => <li className="pl-1" {...props} />
+                      li: (props) => <li className="pl-1" {...props} />,
+                      a: (props) => (
+                        <a className="text-[#38bdf8] underline decoration-[#38bdf8]/40 hover:text-white" {...props} />
+                      ),
+                      pre: (props) => (
+                        <pre
+                          className="my-3 overflow-x-auto rounded-xl border border-emerald-400/20 bg-black/80 p-4 font-mono text-xs leading-relaxed text-emerald-300"
+                          {...props}
+                        />
+                      ),
+                      code: (props) => <code className="font-mono" {...props} />
                     }}
                   >
                     {agentAnswer}
@@ -1617,6 +1654,19 @@ export default function SearchInterface() {
             </motion.div>
           </AnimatePresence>
         </motion.div>
+      </div>
+
+      {/* tmux-style status bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 hidden items-center gap-0 border-t border-emerald-400/20 bg-black/90 font-mono text-[11px] backdrop-blur md:flex">
+        <span className="bg-emerald-400/90 px-3 py-1 font-semibold text-black">ARYAN.SYS</span>
+        <span className="px-3 py-1 text-emerald-300">● online</span>
+        <span className="px-3 py-1 text-white/50">{resumeData.contact.location.toLowerCase()}</span>
+        <span className="px-3 py-1 text-white/50">microsoft · copilot studio</span>
+        <span className="px-3 py-1 text-white/50">{resumeData.sections.research.length} publications</span>
+        <span className="ml-auto px-3 py-1 text-white/40">
+          press <kbd className="rounded border border-white/20 bg-white/10 px-1 text-emerald-300">/</kbd> to query
+        </span>
+        <span className="bg-white/10 px-3 py-1 text-white/70">{missionClock}</span>
       </div>
     </div>
   );

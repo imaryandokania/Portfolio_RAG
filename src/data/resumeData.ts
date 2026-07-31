@@ -1,6 +1,6 @@
 export const resumeData = {
   name: "Aryan Dokania",
-  title: "Research Engineer @ Microsoft",
+  title: "Research Engineer @ Microsoft (Copilot Studio)",
   contact: {
     // phone: "+1 (925)750-0470",
     location: "Seattle, WA",
@@ -11,15 +11,15 @@ export const resumeData = {
   },
   sections: {
     summary: [
-      "Research Engineer at Microsoft working on Copilot Studio, with experience across applied machine learning, large-scale networking, and distributed systems.",
-      "Focused on building agentic AI systems, reliable infrastructure, and intelligent developer tooling."
+      "Research Engineer at Microsoft on the Copilot Studio Engineering team, with hands-on experience fine-tuning large language models, developing meta-learning optimizers, and building AI-driven tools for code review and optimization.",
+      "Proficient in Retrieval-Augmented Generation, High-Performance Computing, and C++. Passionate about advancing AI-powered systems and driving innovation in developer workflows."
     ],
     education: [
       {
         university: "University of California San Diego",
         location: "San Diego, CA",
         degree: "Master of Science in Computer Science and Engineering",
-        period: "Sept. 2024 - Dec. 2025",
+        period: "Sept. 2024 - March 2026",
         gpa: "GPA: 3.96/4.0"
       },
       {
@@ -35,26 +35,36 @@ export const resumeData = {
         title: "Research Engineer",
         company: "Microsoft",
         location: "Redmond, WA",
-        period: "Jan. 2026 - Present",
+        period: "April 2026 - Present",
         points: [
-          "Research Engineer on the Copilot Studio team, building agentic AI experiences and LLM-powered workflows.",
-          "Working across orchestration, evaluation, and tooling for production copilot agents at scale."
+          "Research Engineer on the Copilot Studio Engineering team, building agentic AI experiences and LLM-powered workflows."
         ]
       },
       {
-        title: "Software Engineer II Intern",
+        title: "AI Researcher",
+        company: "UC San Diego CSE Department",
+        location: "San Diego, CA",
+        period: "Jan. 2026 - March 2026",
+        points: [
+          "AI Agents & Infrastructure research at CodeNib."
+        ]
+      },
+      {
+        title: "Software Engineer II Intern (ML)",
         company: "Cisco Systems",
         location: "Ann Arbor, MI",
         period: "June 2025 - Sept. 2025",
         points: [
+          "Fine-tuned large language models for AI code review, improving accuracy, contextual relevance, and integration into developer workflows.",
           "Developed an LLM-based code reviewer using AWS Bedrock and a RAG pipeline with Titan embeddings to analyze pull requests for logic errors, security risks, and design issues.",
           "Implemented optimized FAISS vector search using AWS Lambda for scalable semantic search and batch embedding generation, reducing processing time by 58%.",
-          "Built a logistic regression classifier on SBERT embeddings to evaluate LLM-generated code reviews, improving F1 score by 15% through data augmentation and hyperparameter tuning."
+          "Built a logistic regression classifier on SBERT embeddings to evaluate LLM-generated code reviews, improving F1 score by 15% through data augmentation and hyperparameter tuning.",
+          "Worked on integrating AI Agents and MCP into the code-review workflow."
         ]
       },
       {
-        title: "Researcher",
-        company: "Spatiotemporal Machine Learning Lab (Prof. Rose Yu)",
+        title: "Graduate Researcher",
+        company: "UC San Diego Jacobs School of Engineering (Prof. Rose Yu's Lab)",
         location: "San Diego, CA",
         period: "June 2024 - Sept. 2024",
         points: [
@@ -64,7 +74,7 @@ export const resumeData = {
         ]
       },
       {
-        title: "Associate Software Developer",
+        title: "Software Developer 1",
         company: "Oracle",
         location: "Bengaluru, India",
         period: "Aug. 2023 - June 2024",
@@ -79,7 +89,7 @@ export const resumeData = {
         title: "Project Intern",
         company: "Oracle",
         location: "Bengaluru, India",
-        period: "Jan. 2023 - July 2023",
+        period: "Jan. 2023 - Aug. 2023",
         points: [
           "Designed a fault-tolerant network architecture and automated failover handling with Python routing logic, enabling high-availability services with ~2 ms recovery in 4G distributed infrastructure."
         ]
