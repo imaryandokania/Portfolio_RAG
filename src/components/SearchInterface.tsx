@@ -1241,67 +1241,63 @@ export default function SearchInterface() {
             <CareerGraph />
           </motion.div>
 
-          {/* Search Panel */}
+          {/* Query Console */}
           <motion.div
-            className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(52,211,153,0.12)]"
+            className="overflow-hidden rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_55px_rgba(52,211,153,0.08)]"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <motion.form
-              onSubmit={handleSearch}
-              className="w-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.45 }}
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                <div className="relative w-full sm:flex-1 pb-5 sm:pb-0">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[#38bdf8]/15 via-transparent to-[#34d399]/20 blur-xl" />
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#38bdf8]/30" />
-                  <div className="pointer-events-none absolute inset-x-6 top-3 flex items-center justify-between text-[11px] uppercase tracking-[0.34em] text-white/40">
-                    <span>Query Console</span>
-                    <span>Live</span>
-                  </div>
-                  <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-[#38bdf8]">
-                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <circle cx="11" cy="11" r="7" />
-                      <line x1="16.65" y1="16.65" x2="21" y2="21" strokeLinecap="round" />
-                    </svg>
+            <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.03] px-5 py-3">
+              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <p className="ml-3 font-mono text-xs text-white/50">
+                <span className="text-emerald-400">aryan@portfolio</span>
+                <span className="text-white/40">:~$ </span>
+                <span className="text-white/80">./ask_me_anything.sh</span>
+              </p>
+              <span className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-emerald-300">
+                <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                live
+              </span>
+            </div>
+            <div className="p-5 md:p-6">
+              <form onSubmit={handleSearch}>
+                <div className="relative flex items-center gap-3 rounded-xl border border-white/10 bg-black/70 px-4 transition focus-within:border-[#34d399]/60 focus-within:shadow-[0_0_25px_rgba(52,211,153,0.15)]">
+                  <span className="hidden select-none whitespace-nowrap font-mono text-sm text-emerald-400 sm:block">
+                    &gt;
                   </span>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     ref={queryInputRef}
-                    className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-20 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
-                    focus:outline-none focus:ring-2 focus:ring-[#34d399] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
+                    className="h-14 flex-1 bg-transparent font-mono text-base text-white outline-none placeholder:text-white/35 md:text-lg"
                     placeholder={PLACEHOLDERS[placeholderIndex]}
-                    aria-label="Search Aryan's portfolio"
+                    aria-label="Ask Aryan's AI agent"
                   />
                   <button
                     type="button"
                     onClick={isRecording ? () => stopVoiceCapture(true) : startVoiceCapture}
                     disabled={isVoiceProcessing}
-                    className={`absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-2xl border transition
-                      ${
-                        isRecording
-                          ? 'border-[#f87171]/70 bg-[#7f1d1d]/50 text-[#fca5a5]'
-                          : 'border-white/10 bg-white/5 text-white/80 hover:border-[#38bdf8]/60 hover:text-white'
-                      }
-                      ${isVoiceProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition ${
+                      isRecording
+                        ? 'bg-[#7f1d1d]/60 text-[#fca5a5]'
+                        : 'text-white/50 hover:bg-white/10 hover:text-white'
+                    } ${isVoiceProcessing ? 'cursor-not-allowed opacity-50' : ''}`}
                     aria-label={isRecording ? 'Stop voice input' : 'Start voice input'}
                   >
                     {isVoiceProcessing ? (
-                      <svg className="h-5 w-5 animate-spin text-[#38bdf8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <svg className="h-4 w-4 animate-spin text-[#38bdf8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M12 3a9 9 0 1 1-9 9" strokeLinecap="round" />
                       </svg>
                     ) : isRecording ? (
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="8" y="8" width="8" height="8" rx="2" />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
                         <path d="M19 11a7 7 0 0 1-14 0" />
                         <path d="M12 19v3" />
@@ -1312,10 +1308,10 @@ export default function SearchInterface() {
                     {isSearching && (
                       <motion.div
                         key="search-progress"
-                        className="pointer-events-none absolute -bottom-1 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/10"
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 4 }}
+                        className="pointer-events-none absolute -bottom-px left-3 right-3 h-px overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                       >
                         <motion.div
                           className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#38bdf8] via-[#34d399] to-transparent"
@@ -1325,76 +1321,40 @@ export default function SearchInterface() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-center text-xs text-white/70 sm:text-left">
-                    {voiceError ? (
-                      <span className="text-[#f87171]" role="alert">
-                        {voiceError}
-                      </span>
-                    ) : isVoiceProcessing ? (
-                      <span className="text-[#38bdf8]">Transcribing your voice…</span>
-                    ) : (
-                      <span>
-                        Tap the mic to speak, or press{' '}
-                        <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300">/</kbd>{' '}
-                        to type your question.
-                      </span>
-                    )}
-                  </div>
                 </div>
-                <motion.button
-                  type="submit"
-                  className="relative h-14 w-full sm:h-16 sm:w-48 overflow-hidden rounded-xl bg-[#101827] px-6 text-sm md:text-base font-semibold text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/70 focus:ring-offset-2 focus:ring-offset-black flex items-center justify-center sm:ml-3"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#34d399]/25 via-[#38bdf8]/20 to-[#38bdf8]/25 opacity-70 blur-xl" />
-                  <span className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-[#38bdf8]/50 to-transparent" />
-                  <div className="relative flex items-center justify-center gap-2">
-                    <motion.span
-                      animate={{ rotate: isSearching ? 360 : 0 }}
-                      transition={{ duration: 1.2, repeat: isSearching ? Infinity : 0, ease: 'linear' }}
+              </form>
+              <p className="mt-2.5 px-1 text-xs text-white/40">
+                {voiceError ? (
+                  <span className="text-[#f87171]" role="alert">{voiceError}</span>
+                ) : isVoiceProcessing ? (
+                  <span className="text-[#38bdf8]">Transcribing your voice…</span>
+                ) : (
+                  <>
+                    <kbd className="rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] text-emerald-300">⏎</kbd> to ask
+                    {' · '}
+                    <kbd className="rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] text-emerald-300">/</kbd> to focus
+                    {' · mic to speak · paste a job description for a fit check'}
+                  </>
+                )}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {Object.keys(resumeData.sections)
+                  .filter((section) => section.toLowerCase() !== 'summary')
+                  .map((section) => (
+                    <button
+                      key={section}
+                      onClick={() => handleSectionSelect(section)}
+                      className={`rounded-lg border px-3 py-1.5 font-mono text-xs transition ${
+                        activeSection === section
+                          ? 'border-[#34d399]/70 bg-[#34d399]/10 text-emerald-300'
+                          : 'border-white/10 bg-white/[0.03] text-white/60 hover:border-[#34d399]/50 hover:text-emerald-300'
+                      }`}
                     >
-                      <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <circle cx="12" cy="12" r="9" opacity="0.3" />
-                        <path d="M12 3a9 9 0 0 1 9 9" strokeLinecap="round" />
-                      </svg>
-                    </motion.span>
-                    <span>{isSearching ? 'Searching …' : 'Search'}</span>
-                  </div>
-                </motion.button>
+                      <span className="text-emerald-500">$</span> {section}
+                    </button>
+                  ))}
               </div>
-            </motion.form>
-            <motion.div 
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-            {Object.keys(resumeData.sections)
-              .filter((section) => section.toLowerCase() !== 'summary')
-              .map((section) => (
-              <motion.button
-                key={section}
-                onClick={() => handleSectionSelect(section)}
-                className={`group relative overflow-hidden rounded-xl border ${
-                    activeSection === section ? 'border-[#34d399]' : 'border-white/10'
-                  } bg-white/5 p-3 text-left transition-all duration-300 hover:border-[#34d399]/70 hover:bg-[#34d399]/15 capitalize`}
-                  whileHover={{ y: -3 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.12),_transparent_65%)]" />
-                  <div className="relative space-y-1.5">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-emerald-400/70">$ ask --about</p>
-                    <p className="font-mono text-sm font-semibold text-white">{section}</p>
-                  </div>
-                </motion.button>
-              ))}
-            </motion.div>
-
-            {/* <div className="flex items-center gap-2 text-xs text-white/60">
-              <span className="inline-flex h-2 w-2 rounded-full bg-[#38bdf8]" />
-              <span>Keyword search ready</span>
-            </div> */}
+            </div>
           </motion.div>
 
           {voiceSessionStage === 'idle' && !isSearching && agentAnswer && (
