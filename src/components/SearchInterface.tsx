@@ -42,6 +42,8 @@ export default function SearchInterface() {
   const [tourActive, setTourActive] = useState(false);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const visitCountedRef = useRef(false);
+  const [crtOff, setCrtOff] = useState(false);
+  const konamiRef = useRef<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [agentAnswer, setAgentAnswer] = useState('');
@@ -153,6 +155,20 @@ export default function SearchInterface() {
 
     return `${compactDegree} @ ${compactUniversity}`.trim();
   }, [primaryEducation]);
+
+  useEffect(() => {
+    const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    const handler = (e: KeyboardEvent) => {
+      konamiRef.current = [...konamiRef.current, e.key].slice(-KONAMI.length);
+      if (KONAMI.every((k, i) => konamiRef.current[i] === k)) {
+        konamiRef.current = [];
+        setCrtOff(true);
+        window.setTimeout(() => window.location.reload(), 1100);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   useEffect(() => {
     if (visitCountedRef.current) {
@@ -858,6 +874,10 @@ export default function SearchInterface() {
     stopVoicePlayback();
 
     const normalized = searchQuery.trim().toLowerCase();
+    if (normalized === 'ssh' || normalized === 'ssh aryan@portfolio') {
+      window.location.href = '/ssh';
+      return;
+    }
     if (normalized === 'tour' || normalized === 'take the tour' || normalized === './tour.sh') {
       setSearchQuery('');
       setTourActive(true);
@@ -909,7 +929,7 @@ export default function SearchInterface() {
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${crtOff ? 'crt-off' : ''}`}>
       <audio ref={replyAudioRef} src={replyAudioUrl ?? undefined} className="hidden" aria-hidden="true" />
       <AnimatePresence>
         {voiceSessionStage !== 'idle' && (
@@ -1553,6 +1573,10 @@ export default function SearchInterface() {
           <footer className="flex flex-col items-center gap-2 pt-4 pb-2 font-mono text-xs text-white/40">
             <p>
               <span className="text-emerald-400">$</span> echo "built with Next.js · RAG · OpenAI · Three.js"
+            </p>
+            <p className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+              <a href="/ssh" className="text-emerald-300 hover:text-white transition">$ ssh aryan@portfolio ↗</a>
+              <a href="/api/resume" target="_blank" rel="noreferrer" className="text-[#38bdf8] hover:text-white transition">$ curl /api/resume ↗</a>
             </p>
             <p>
               © 2026 Aryan Dokania ·{' '}
