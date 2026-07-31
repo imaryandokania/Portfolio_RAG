@@ -142,43 +142,6 @@ export default function SearchInterface() {
     return `${compactDegree} @ ${compactUniversity}`.trim();
   }, [primaryEducation]);
 
-  const highlightProjects = useMemo(
-    () => resumeData.sections.projects?.slice(0, 2) ?? [],
-    []
-  );
-
-  const skillHighlights = useMemo(() => {
-    const skills = resumeData.sections.skills;
-    if (!skills) {
-      return [];
-    }
-    const languageHighlight = (() => {
-      const langs = skills.languages ?? [];
-      const selection = langs.slice(0, 4);
-      if (langs.includes('Python') && !selection.includes('Python')) {
-        if (selection.length >= 4) {
-          selection.pop();
-        }
-        selection.push('Python');
-      }
-      return selection;
-    })();
-    return [
-      {
-        label: 'Languages',
-        items: languageHighlight
-      },
-      {
-        label: 'ML & AI',
-        items: skills.mlAi?.slice(0, 4) ?? []
-      },
-      {
-        label: 'Cloud & Tools',
-        items: skills.cloudTools?.slice(0, 4) ?? []
-      }
-    ];
-  }, []);
-
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key !== '/') {
@@ -761,41 +724,6 @@ export default function SearchInterface() {
 
   const aggregatedMetrics = useMemo(() => computeExperienceMetrics(), []);
 
-  const telemetryMetrics = useMemo(() => {
-    const aggregated = aggregatedMetrics;
-
-    return [
-      {
-        label: 'AI Systems Index',
-        value: `${aggregated.aiScore}`,
-        suffix: '/100',
-        detail: `${aggregated.mlMentions} ML-specific highlights across roles & projects`,
-        accent: '#38bdf8'
-      },
-      {
-        label: 'Experience Depth',
-        value: `${aggregated.experienceScore}`,
-        suffix: '/100',
-        detail: `${aggregated.experienceYears.toFixed(1)} yrs (${aggregated.experienceMonths} months) of hands-on work`,
-        accent: '#a855f7'
-      },
-      {
-        label: 'Cloud Coverage',
-        value: `${aggregated.cloudScore}`,
-        suffix: '/100',
-        detail: `${aggregated.cloudToolCount} tools · ${aggregated.cloudMentions} infra mentions`,
-        accent: '#0ea5e9'
-      },
-      {
-        label: 'Project Velocity',
-        value: `${aggregated.projectScore}`,
-        suffix: '/100',
-        detail: `${aggregated.projectPoints} impactful project bullet points`,
-        accent: '#f3e8ff'
-      }
-    ];
-  }, [aggregatedMetrics]);
-
   const impactHighlights = useMemo(() => {
     const aggregated = aggregatedMetrics;
     return [
@@ -809,13 +737,13 @@ export default function SearchInterface() {
         label: 'Delivery Velocity',
         value: `${aggregated.projectScore}/100`,
         detail: `${aggregated.projectPoints} quantified project bullet points`,
-        accent: '#a855f7'
+        accent: '#38bdf8'
       },
       {
         label: 'Research Signal',
         value: `${aggregated.researchCount}`,
         detail: 'peer-reviewed or publication-grade outputs',
-        accent: '#fbbf24'
+        accent: '#34d399'
       }
     ];
   }, [aggregatedMetrics]);
@@ -1034,12 +962,12 @@ export default function SearchInterface() {
       <MatrixRain />
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(99,102,241,0.15),_transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(52,211,153,0.15),_transparent_60%)]" />
         <div
           className="absolute inset-0 opacity-20 mix-blend-screen"
           style={{
             backgroundImage:
-              'linear-gradient(90deg, rgba(56, 189, 248, 0.15) 1px, transparent 1px), linear-gradient(0deg, rgba(168, 85, 247, 0.12) 1px, transparent 1px)',
+              'linear-gradient(90deg, rgba(56, 189, 248, 0.15) 1px, transparent 1px), linear-gradient(0deg, rgba(56, 189, 248, 0.12) 1px, transparent 1px)',
             backgroundSize: '120px 120px'
           }}
         />
@@ -1059,7 +987,7 @@ export default function SearchInterface() {
             transition={{ delay: 0.1, duration: 0.6 }}
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(168,85,247,0.18),_transparent_55%)] mix-blend-screen" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(56,189,248,0.18),_transparent_55%)] mix-blend-screen" />
             <div className="relative flex items-center gap-2 border-b border-white/10 bg-black/50 px-5 py-3">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
@@ -1074,7 +1002,7 @@ export default function SearchInterface() {
                 online
               </p>
             </div>
-            <div className="grid gap-8 lg:grid-cols-[1.3fr_0.9fr] relative p-8 lg:p-12">
+            <div className="relative p-8 lg:p-12">
               <div className="space-y-6">
                 <div className="text-left space-y-4">
                   <motion.div 
@@ -1152,67 +1080,6 @@ export default function SearchInterface() {
                 </motion.div>
               </div>
 
-              <motion.div 
-                className="relative rounded-2xl border border-[#6366f1]/30 bg-black/60 p-6 lg:p-8 backdrop-blur-lg"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
-              >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.15),_transparent_55%)]" />
-                <div className="absolute -top-10 -right-12 h-40 w-40 rounded-full bg-[#6366f1]/30 blur-3xl" />
-                <div className="relative space-y-5">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/50">
-                    <span>Systems Monitor</span>
-                    <span>{missionClock}</span>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Latest Projects</p>
-                    <div className="mt-3 space-y-3">
-                      {highlightProjects.map((project, idx) => (
-                        <motion.a
-                          key={project.title}
-                          href={project.link}
-                          target={project.link ? '_blank' : undefined}
-                          rel={project.link ? 'noreferrer' : undefined}
-                          className="block rounded-xl border border-white/10 bg-black/40 p-4 transition-colors duration-300 hover:border-[#6366f1]/60 hover:bg-[#6366f1]/10"
-                          whileHover={{ x: 6 }}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-[#6366f1]">{project.title}</p>
-                            <span className="text-xs text-white/60">#{idx + 1}</span>
-                          </div>
-                          {project.technologies && (
-                            <p className="mt-1 text-xs text-white/50">
-                              {project.technologies.join(' • ')}
-                            </p>
-                          )}
-                        </motion.a>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-white/10 pt-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Skill Matrix</p>
-                    <div className="mt-3 space-y-2">
-                      {skillHighlights.map(({ label, items }) => (
-                        <div key={label} className="flex flex-wrap gap-2">
-                          <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-3 py-1 text-xs uppercase tracking-wide text-[#38bdf8]">
-                            {label}
-                          </span>
-                          {items.map((item) => (
-                            <span
-                              key={item}
-                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
-                            >
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
             </div>
           </motion.div>
 
@@ -1337,7 +1204,7 @@ export default function SearchInterface() {
 
           {/* Search Panel */}
           <motion.div
-            className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(99,102,241,0.12)]"
+            className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(52,211,153,0.12)]"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -1358,7 +1225,7 @@ export default function SearchInterface() {
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                 <div className="relative w-full sm:flex-1 pb-5 sm:pb-0">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[#38bdf8]/15 via-transparent to-[#6366f1]/20 blur-xl" />
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[#38bdf8]/15 via-transparent to-[#34d399]/20 blur-xl" />
                   <div className="pointer-events-none absolute inset-0 rounded-2xl border border-[#38bdf8]/30" />
                   <div className="pointer-events-none absolute inset-x-6 top-3 flex items-center justify-between text-[11px] uppercase tracking-[0.34em] text-white/40">
                     <span>Query Console</span>
@@ -1376,7 +1243,7 @@ export default function SearchInterface() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     ref={queryInputRef}
                     className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-20 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
-                    focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
+                    focus:outline-none focus:ring-2 focus:ring-[#34d399] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
                     placeholder="What do you want to know about me?"
                     aria-label="Search Aryan's portfolio"
                   />
@@ -1419,7 +1286,7 @@ export default function SearchInterface() {
                         exit={{ opacity: 0, y: 4 }}
                       >
                         <motion.div
-                          className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#38bdf8] via-[#6366f1] to-transparent"
+                          className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#38bdf8] via-[#34d399] to-transparent"
                           animate={{ x: ['-50%', '110%'] }}
                           transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
                         />
@@ -1448,7 +1315,7 @@ export default function SearchInterface() {
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#6366f1]/25 via-[#a855f7]/20 to-[#38bdf8]/25 opacity-70 blur-xl" />
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#34d399]/25 via-[#38bdf8]/20 to-[#38bdf8]/25 opacity-70 blur-xl" />
                   <span className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-[#38bdf8]/50 to-transparent" />
                   <div className="relative flex items-center justify-center gap-2">
                     <motion.span
@@ -1478,12 +1345,12 @@ export default function SearchInterface() {
                 key={section}
                 onClick={() => handleSectionSelect(section)}
                 className={`group relative overflow-hidden rounded-xl border ${
-                    activeSection === section ? 'border-[#6366f1]' : 'border-white/10'
-                  } bg-white/5 p-3 text-left transition-all duration-300 hover:border-[#6366f1]/70 hover:bg-[#6366f1]/15 capitalize`}
+                    activeSection === section ? 'border-[#34d399]' : 'border-white/10'
+                  } bg-white/5 p-3 text-left transition-all duration-300 hover:border-[#34d399]/70 hover:bg-[#34d399]/15 capitalize`}
                   whileHover={{ y: -3 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.12),_transparent_65%)]" />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.12),_transparent_65%)]" />
                   <div className="relative space-y-1.5">
                     <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-emerald-400/70">$ ask --about</p>
                     <p className="font-mono text-sm font-semibold text-white">{section}</p>
@@ -1570,61 +1437,6 @@ export default function SearchInterface() {
             </motion.div>
           )}
 
-          <motion.div
-            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl shadow-[0_0_60px_rgba(56,189,248,0.06)]"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55 }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.08),_transparent_60%)]" />
-            <div
-              className="absolute inset-0 opacity-40 mix-blend-overlay"
-              style={{
-                backgroundImage:
-                  'repeating-linear-gradient(90deg, rgba(56,189,248,0.12), rgba(56,189,248,0.12) 1px, transparent 1px, transparent 24px)'
-              }}
-            />
-            <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4 auto-rows-fr">
-              {telemetryMetrics.map((metric) => (
-                <motion.div
-                  key={metric.label}
-                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 p-4 pb-6 backdrop-blur-xl flex flex-col justify-between"
-                  whileHover={{ y: -6 }}
-                >
-                  <div
-                    className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    style={{
-                      background: `radial-gradient(circle at top, ${metric.accent}22, transparent 60%)`
-                    }}
-                  />
-                  <div className="relative space-y-2">
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/60 break-words">
-                      {metric.label}
-                    </p>
-                    <p className="flex items-baseline gap-1 text-2xl font-semibold" style={{ color: metric.accent }}>
-                      <span>{metric.value}</span>
-                      {metric.suffix && (
-                        <span className="text-sm text-white/60">{metric.suffix}</span>
-                      )}
-                    </p>
-                    <p className="text-xs leading-relaxed text-white/50 break-words">{metric.detail}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {!isSearching && !error && (
-            <motion.div
-              className="space-y-6"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <SkillClusterBars />
-            </motion.div>
-          )}
-
           <ResumeSections />
 
           {/* Results Area */}
@@ -1643,7 +1455,7 @@ export default function SearchInterface() {
 
               {lastQuery && !isSearching && !agentAnswer && !error && (
                 <motion.div 
-                  className="text-center text-[#6366f1]"
+                  className="text-center text-[#34d399]"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}

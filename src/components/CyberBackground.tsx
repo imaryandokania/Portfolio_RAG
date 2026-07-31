@@ -91,7 +91,7 @@ function Stars(props: any) {
         <Points ref={trailRef} positions={trailPositions} stride={3} frustumCulled={false}>
           <PointMaterial
             transparent
-            color="#6366f1"
+            color="#34d399"
             size={0.01}
             sizeAttenuation={true}
             depthWrite={false}

@@ -27,13 +27,13 @@ export default function SkillClusterBars() {
       label: 'Distributed Systems',
       score: metrics.distributedScore,
       descriptor: `${metrics.distributedMentions} distributed patterns detected · ${metrics.researchCount} research signals`,
-      accent: '#6366f1'
+      accent: '#34d399'
     },
     {
       label: 'Languages & Foundations',
       score: Math.min(100, Math.round(((languageSkills + mlSkills) / 12) * 100)),
       descriptor: `${languageSkills} programming languages`,
-      accent: '#a855f7'
+      accent: '#38bdf8'
     }
   ];
 
@@ -44,7 +44,7 @@ export default function SkillClusterBars() {
         className="absolute inset-0 opacity-30 mix-blend-overlay"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(90deg, rgba(99,102,241,0.12), rgba(99,102,241,0.12) 1px, transparent 1px, transparent 22px)'
+            'repeating-linear-gradient(90deg, rgba(52,211,153,0.12), rgba(52,211,153,0.12) 1px, transparent 1px, transparent 22px)'
         }}
       />
       <div className="relative space-y-6">

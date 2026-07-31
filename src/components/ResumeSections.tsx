@@ -37,7 +37,13 @@ function TerminalPanel({
 }
 
 export default function ResumeSections() {
-  const { experience, projects, research, education, achievements } = resumeData.sections;
+  const { experience, projects, research, education, achievements, skills } = resumeData.sections;
+
+  const skillGroups = [
+    { label: 'languages', items: skills.languages },
+    { label: 'ml_and_ai', items: skills.mlAi },
+    { label: 'cloud_and_tools', items: skills.cloudTools }
+  ];
 
   return (
     <div className="space-y-10">
@@ -128,6 +134,35 @@ export default function ResumeSections() {
         </div>
       </TerminalPanel>
 
+      {/* Skills */}
+      <TerminalPanel id="skills" command="cat skills.conf">
+        <div className="space-y-5">
+          {skillGroups.map((group) => (
+            <div key={group.label} className="flex flex-wrap items-baseline gap-2">
+              <span className="w-full font-mono text-xs text-emerald-400 sm:w-40">
+                [{group.label}]
+              </span>
+              <div className="flex flex-1 flex-wrap gap-1.5">
+                {group.items.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded border border-white/10 bg-black/40 px-2.5 py-1 font-mono text-xs text-white/75 transition hover:border-emerald-400/50 hover:text-emerald-300"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="flex flex-wrap items-baseline gap-2 border-t border-white/10 pt-4">
+            <span className="w-full font-mono text-xs text-emerald-400 sm:w-40">[coursework]</span>
+            <p className="flex-1 text-xs leading-relaxed text-white/60">
+              {skills.coursework.join(' · ')}
+            </p>
+          </div>
+        </div>
+      </TerminalPanel>
+
       {/* Research */}
       <TerminalPanel id="research" command="grep -r 'publications' research/">
         <div className="space-y-4">
@@ -137,13 +172,13 @@ export default function ResumeSections() {
               href={paper.link}
               target="_blank"
               rel="noreferrer"
-              className="group block rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-[#a855f7]/60 hover:bg-[#a855f7]/[0.06]"
+              className="group block rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-[#38bdf8]/60 hover:bg-[#38bdf8]/[0.06]"
             >
               <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full border border-[#a855f7]/40 bg-[#a855f7]/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-[#c084fc]">
+                <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-[#7dd3fc]">
                   {paper.year}
                 </span>
-                <h3 className="text-base font-semibold text-white group-hover:text-[#c084fc] transition">
+                <h3 className="text-base font-semibold text-white group-hover:text-[#7dd3fc] transition">
                   {paper.title}
                 </h3>
               </div>
@@ -177,7 +212,7 @@ export default function ResumeSections() {
             {achievements.map((achievement) => (
               <div key={achievement.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#fbbf24]">★</span>
+                  <span className="text-[#34d399]">★</span>
                   <h3 className="text-base font-semibold text-white">{achievement.title}</h3>
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">{achievement.description}</p>

@@ -24,7 +24,7 @@ function MorphingSphere({ intensity }: { intensity: number }) {
       <icosahedronGeometry args={[1, 3]} />
       <meshStandardMaterial
         color="#38bdf8"
-        emissive="#4338ca"
+        emissive="#0d9488"
         emissiveIntensity={1.8}
         metalness={0.4}
         roughness={0.25}
@@ -37,7 +37,7 @@ function MorphingSphere({ intensity }: { intensity: number }) {
 export default function VoiceOrb({ intensity = 0 }: { intensity?: number }) {
   return (
     <div className="relative h-56 w-56 md:h-64 md:w-64">
-      <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-[#38bdf8]/25 via-transparent to-[#a855f7]/20 blur-2xl" />
+      <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-[#38bdf8]/25 via-transparent to-[#38bdf8]/20 blur-2xl" />
       <div className="pointer-events-none absolute inset-2 -z-10 rounded-full border border-white/10 bg-white/[0.02] backdrop-blur-sm" />
       <Canvas
         camera={{ position: [0, 0, 2.8], fov: 40 }}
@@ -46,7 +46,7 @@ export default function VoiceOrb({ intensity = 0 }: { intensity?: number }) {
         gl={{ alpha: true, antialias: true }}
       >
         <ambientLight intensity={0.7} />
-        <pointLight position={[0, 0, 4]} intensity={2.2} color="#a855f7" />
+        <pointLight position={[0, 0, 4]} intensity={2.2} color="#38bdf8" />
         <pointLight position={[2, 2, 2]} intensity={1.2} color="#38bdf8" />
         <Suspense fallback={null}>
           <MorphingSphere intensity={intensity} />

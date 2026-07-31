@@ -16,7 +16,7 @@ body {
   position: relative;
   min-height: 100vh;
   background: radial-gradient(circle at top, rgba(0, 255, 245, 0.08), transparent 55%),
-    radial-gradient(circle at bottom, rgba(255, 45, 85, 0.08), transparent 60%),
+    radial-gradient(circle at bottom, rgba(56, 189, 248, 0.08), transparent 60%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
@@ -29,7 +29,7 @@ body::before {
   pointer-events: none;
   background-image:
     linear-gradient(0deg, rgba(0, 255, 245, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(176, 38, 255, 0.06) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(52, 211, 153, 0.06) 1px, transparent 1px);
   background-size: 0.5rem 3rem, 3rem 0.5rem;
   mix-blend-mode: screen;
   animation: scanlines 14s linear infinite;
@@ -47,11 +47,11 @@ a {
 .cyberpunk-glow {
   text-shadow:
     0 0 12px rgba(0, 255, 245, 0.45),
-    0 0 28px rgba(176, 38, 255, 0.35);
+    0 0 28px rgba(52, 211, 153, 0.35);
 }
 
 ::selection {
-  background: rgba(176, 38, 255, 0.35);
+  background: rgba(52, 211, 153, 0.35);
   color: #0b1120;
 }
 
@@ -89,7 +89,7 @@ a {
 }
 
 .glitch::after {
-  color: #f472b6;
+  color: #38bdf8;
   z-index: -2;
   animation: glitch-shift-b 6s infinite steps(1);
 }
@@ -162,4 +162,33 @@ body::after {
   .terminal-cursor {
     animation: none;
   }
+}
+
+/* Themed scrollbar */
+html {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030712;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.5), rgba(56, 189, 248, 0.5));
+  border-radius: 8px;
+  border: 2px solid #030712;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.8), rgba(56, 189, 248, 0.8));
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(52, 211, 153, 0.5) #030712;
 }
