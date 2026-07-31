@@ -6,13 +6,22 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { resumeData } from '../data/resumeData';
 import { computeExperienceMetrics } from '../utils/resumeMetrics';
+import dynamic from 'next/dynamic';
 import SkillClusterBars from './SkillClusterBars';
-import CyberBackground from './CyberBackground';
 import VoiceOrb from './VoiceOrb';
 import TerminalBoot from './TerminalBoot';
 import ResumeSections from './ResumeSections';
 import MatrixRain from './MatrixRain';
-import CareerGraph from './CareerGraph';
+
+const CyberBackground = dynamic(() => import('./CyberBackground'), { ssr: false });
+const CareerGraph = dynamic(() => import('./CareerGraph'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[380px] items-center justify-center rounded-3xl border border-white/10 bg-black/60 font-mono text-xs text-white/40 md:h-[440px]">
+      loading career graph…
+    </div>
+  )
+});
 import RecruiterView from './RecruiterView';
 import GuidedTour from './GuidedTour';
 
