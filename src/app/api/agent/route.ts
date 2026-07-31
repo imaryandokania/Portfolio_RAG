@@ -145,6 +145,50 @@ async function fetchGithubActivity(): Promise<string> {
   }
 }
 
+async function storeVisitorMessage(args: {
+  name?: string;
+  contact?: string;
+  message?: string;
+}): Promise<string> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    return "Message storage is not configured — ask them to email aryandokania2001@gmail.com directly instead.";
+  }
+  try {
+    const entry = JSON.stringify({
+      name: String(args.name ?? "anonymous").slice(0, 500),
+      contact: String(args.contact ?? "not provided").slice(0, 500),
+      message: String(args.message ?? "").slice(0, 1000),
+      at: new Date().toISOString(),
+    });
+    const res = await fetch(`${url}/lpush/portfolio:messages/${encodeURIComponent(entry)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`upstash ${res.status}`);
+    return "Message stored successfully. Aryan will see it.";
+  } catch {
+    return "Storing failed — suggest emailing aryandokania2001@gmail.com directly.";
+  }
+}
+
+async function executeTool(name: string, rawArgs: string): Promise<string> {
+  if (name === "github_activity") {
+    return fetchGithubActivity();
+  }
+  if (name === "leave_message") {
+    let args: Record<string, string> = {};
+    try {
+      args = JSON.parse(rawArgs || "{}") as Record<string, string>;
+    } catch {
+      // fall through with empty args
+    }
+    return storeVisitorMessage(args);
+  }
+  return "Tool not available.";
+}
+
 const AGENT_TOOLS: OpenAI.Responses.Tool[] = [
   { type: "web_search_preview" },
   {
@@ -153,6 +197,23 @@ const AGENT_TOOLS: OpenAI.Responses.Tool[] = [
     description:
       "Fetch Aryan's live GitHub repositories with languages, stars, and last-push dates. Use when asked about recent code, open source, or what he is currently building.",
     parameters: { type: "object", properties: {}, additionalProperties: false },
+    strict: true,
+  },
+  {
+    type: "function",
+    name: "leave_message",
+    description:
+      "Deliver a message from the visitor to Aryan. Use ONLY after the visitor has provided their message and ideally their name and a way to reach them back. Confirm to the visitor once stored.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Visitor's name" },
+        contact: { type: "string", description: "Email, LinkedIn, or other way to reach the visitor" },
+        message: { type: "string", description: "The message for Aryan" },
+      },
+      required: ["name", "contact", "message"],
+      additionalProperties: false,
+    },
     strict: true,
   },
 ];
@@ -311,7 +372,7 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: "input_text",
-              text: "You are Aryan's AI agent, speaking as Aryan in first person. Use the provided context (resume + personal knowledge base with stories, opinions, and deep-dives) as ground truth. When a 'brain' document is relevant, prefer its first-person voice and detail over dry resume bullets. Respond concisely and reference specific experiences when helpful. Prefer flowing sentences; use bullet points only for genuinely list-like content. Keep the tone conversational. Only answer questions related to Aryan; if someone asks something weird, roast them playfully. You have tools: call github_activity for questions about recent code or open-source work. SPECIAL MODES: (1) If the user pastes what looks like a job description, switch to FIT CHECK mode: analyze it requirement by requirement against the resume, output a markdown table mapping each key requirement to concrete evidence (role/project + result), then a verdict line with a fit rating out of 10 and honest gaps. (2) If asked to get in touch, draft a short intro email on the user's behalf and include a mailto:aryandokania2001@gmail.com link with a suitable subject.",
+              text: "You are Aryan's AI agent, speaking as Aryan in first person. Use the provided context (resume + personal knowledge base with stories, opinions, and deep-dives) as ground truth. When a 'brain' document is relevant, prefer its first-person voice and detail over dry resume bullets. Respond concisely and reference specific experiences when helpful. Prefer flowing sentences; use bullet points only for genuinely list-like content. Keep the tone conversational. Only answer questions related to Aryan; if someone asks something weird, roast them playfully. You have tools: call github_activity for questions about recent code or open-source work. SPECIAL MODES: (1) If the user pastes what looks like a job description, switch to FIT CHECK mode: analyze it requirement by requirement against the resume, output a markdown table mapping each key requirement to concrete evidence (role/project + result), then a verdict line with a fit rating out of 10 and honest gaps. (2) If asked to get in touch, draft a short intro email on the user's behalf and include a mailto:aryandokania2001@gmail.com link with a suitable subject. (3) If the visitor wants to LEAVE A MESSAGE for Aryan (interview request, collab, hello), collect their name, a way to reach them, and the message — ask for anything missing — then call leave_message and confirm delivery.",
             },
           ],
         },
@@ -353,12 +414,13 @@ export async function POST(request: NextRequest) {
               loopInput = [...loopInput, ...draft.output];
               for (const call of functionCalls) {
                 controller.enqueue(
-                  encoder.encode(`\`⚙ ${call.name}()\` — fetching live data…\n\n`)
+                  encoder.encode(
+                    call.name === "leave_message"
+                      ? `\`⚙ leave_message()\` — delivering your message…\n\n`
+                      : `\`⚙ ${call.name}()\` — fetching live data…\n\n`
+                  )
                 );
-                let output = "Tool not available.";
-                if (call.name === "github_activity") {
-                  output = await fetchGithubActivity();
-                }
+                const output = await executeTool(call.name, call.arguments);
                 loopInput.push({
                   type: "function_call_output",
                   call_id: call.call_id,
@@ -396,11 +458,35 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const response = await client.responses.create({
+    let finalInput: OpenAI.Responses.ResponseInput = [...inputMessages];
+    let response = await client.responses.create({
       model: CHAT_MODEL,
-      tools: [{ type: "web_search_preview" }],
-      input: inputMessages,
+      tools: AGENT_TOOLS,
+      input: finalInput,
     });
+
+    for (let hop = 0; hop < 3; hop += 1) {
+      const functionCalls = response.output.filter(
+        (item): item is OpenAI.Responses.ResponseFunctionToolCall =>
+          item.type === "function_call"
+      );
+      if (!functionCalls.length) {
+        break;
+      }
+      finalInput = [...finalInput, ...response.output];
+      for (const call of functionCalls) {
+        finalInput.push({
+          type: "function_call_output",
+          call_id: call.call_id,
+          output: await executeTool(call.name, call.arguments),
+        });
+      }
+      response = await client.responses.create({
+        model: CHAT_MODEL,
+        tools: AGENT_TOOLS,
+        input: finalInput,
+      });
+    }
 
     const answer = response.output_text?.trim();
 

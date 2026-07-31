@@ -37,6 +37,7 @@ const SLASH_COMMANDS = [
   { cmd: '/github', desc: 'live GitHub activity' },
   { cmd: '/ssh', desc: 'command-line version' },
   { cmd: '/recruiter', desc: 'clean printable resume' },
+  { cmd: '/contact', desc: 'leave Aryan a message via the agent' },
   { cmd: '/sudo', desc: 'hire_sequence.sh 🔓' },
   { cmd: '/clear', desc: 'reset the conversation' }
 ];
@@ -61,6 +62,7 @@ export default function SearchInterface() {
     'Tell me about the ICLR paper',
     'What did he build at Cisco?',
     'Paste a job description → instant fit check',
+    'Leave me a message — my agent delivers it',
     "What's he pushing to GitHub lately?",
     'try: sudo hire aryan'
   ];
@@ -969,6 +971,10 @@ export default function SearchInterface() {
         break;
       case '/recruiter':
         setRecruiterMode(true);
+        break;
+      case '/contact':
+        setSearchQuery('Leave a message for Aryan: my name is ..., you can reach me at ..., and I want to say ...');
+        queryInputRef.current?.focus();
         break;
       case '/sudo':
         runSudoEgg('sudo hire aryan');
