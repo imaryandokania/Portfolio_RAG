@@ -91,6 +91,7 @@ function buildNodes(): GraphNode[] {
     ),
     ...onRing(
       [
+        { label: 'CodeNib 2026', sub: 'Repo context for agents' },
         { label: 'ICLR WS 2025', sub: 'L2O Symmetries' },
         { label: 'i-PACT 2023', sub: 'Grammar Correction' },
         { label: 'SSIC 2023', sub: 'Secure Sharing' }

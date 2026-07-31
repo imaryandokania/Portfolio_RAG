@@ -46,7 +46,8 @@ export const resumeData = {
         location: "San Diego, CA",
         period: "Jan. 2026 - March 2026",
         points: [
-          "AI Agents & Infrastructure research at CodeNib."
+          "AI Agents & Infrastructure research on CodeNib, a multi-view data system serving repository context to coding agents.",
+          "Co-authored the resulting paper (arXiv:2607.25431): reusable lexical, dense, and structural views per repository commit, with 8.7-25.4x faster graph/vector updates and 50-87% fewer trajectory tokens than grep/read baselines."
         ]
       },
       {
@@ -177,6 +178,13 @@ export const resumeData = {
       }
     ],
     research: [
+      {
+        title: "CodeNib: A Multi-View Data System for Serving Repository Context to Coding Agents",
+        authors: ["Zhongming Yu, Hengjia Yu, Boqin Yuan, …, Aryan Dokania, …, Jishen Zhao (15 authors)"],
+        venue: "arXiv preprint, cs.SE",
+        year: "2026",
+        link: "https://arxiv.org/abs/2607.25431"
+      },
       {
         title: "Improving Learning to Optimize Using Parameter Symmetries",
         authors: ["Guy Zamir", "Aryan Dokania", "Bo Zhao", "Rose Yu"],

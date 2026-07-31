@@ -7,6 +7,10 @@ export const revalidate = 86400;
 
 const PAPERS: { title: string; s2id?: string }[] = [
   {
+    title: "CodeNib: A Multi-View Data System for Serving Repository Context to Coding Agents",
+    s2id: "arXiv:2607.25431"
+  },
+  {
     title: "Improving Learning to Optimize Using Parameter Symmetries",
     s2id: "arXiv:2504.15399"
   },

@@ -27,7 +27,7 @@ const STEPS: TourStep[] = [
   },
   {
     sectionId: 'research',
-    text: 'Three publications — including an ICLR 2025 workshop paper on improving learning-to-optimize with parameter symmetries, co-authored with Prof. Rose Yu.'
+    text: 'Four publications — including CodeNib (2026), a data system serving repository context to coding agents, and an ICLR 2025 workshop paper on learning-to-optimize co-authored with Prof. Rose Yu.'
   },
   {
     sectionId: 'skills',

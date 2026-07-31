@@ -50,6 +50,14 @@ export const brainData: BrainEntry[] = [
     draft: false
   },
   {
+    id: "deep-dive-codenib",
+    topic: "deep-dive",
+    title: "CodeNib: my latest paper on repository context for coding agents",
+    content:
+      "CodeNib (arXiv:2607.25431, July 2026) came out of my AI Researcher stint at UC San Diego's CSE department with Prof. Jishen Zhao's group. The problem: coding agents constantly search, navigate, and re-discover context in evolving repositories, because indexes, language servers, and task histories are all disconnected. CodeNib builds reusable lexical, dense, and structural views per repository commit, maps outputs to repository-relative source ranges, keeps views valid across edits, and serves ranked search, symbol navigation, and bounded context through one runtime. Results: graph and vector updates 8.7x and 25.4x faster than independent rebuilds at the median, 4.7x median latency advantage over live language servers on static navigation, and across five models the selected-context policies preserved localization with 50-87% fewer trajectory tokens than paired grep/read. It's directly relevant to my Microsoft work — it's the data-systems side of making coding agents efficient.",
+    draft: false
+  },
+  {
     id: "faq-what-is-copilot-studio",
     topic: "faq",
     title: "What do you do at Microsoft?",
