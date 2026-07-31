@@ -77,6 +77,20 @@ export default function SearchInterface() {
   const soundOnRef = useRef(false);
   const tickCtxRef = useRef<AudioContext | null>(null);
   const lastTickRef = useRef(0);
+  const sessionIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    try {
+      let sid = window.localStorage.getItem('portfolio-session-id');
+      if (!sid) {
+        sid = crypto.randomUUID();
+        window.localStorage.setItem('portfolio-session-id', sid);
+      }
+      sessionIdRef.current = sid;
+    } catch {
+      sessionIdRef.current = null;
+    }
+  }, []);
   const konamiRef = useRef<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
@@ -544,7 +558,8 @@ export default function SearchInterface() {
           body: JSON.stringify({
             query: normalizedQuery,
             contextTurns: payloadTurns.length ? payloadTurns : undefined,
-            stream: useStreaming
+            stream: useStreaming,
+            sessionId: sessionIdRef.current ?? undefined
           })
         });
 

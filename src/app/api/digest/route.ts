@@ -12,15 +12,17 @@ const MESSAGES_KEY = "portfolio:messages";
 
 type StoredMessage = { name?: string; contact?: string; message?: string; at?: string };
 
-async function redis(cmd: string): Promise<{ result?: unknown } | null> {
+async function redis(cmd: (string | number)[]): Promise<{ result?: unknown } | null> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  const res = await fetch(`${url}/${cmd}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(cmd.map(String)),
     cache: "no-store"
   });
-  if (!res.ok) throw new Error(`upstash ${res.status} on ${cmd}`);
+  if (!res.ok) throw new Error(`upstash ${res.status} on ${cmd[0]}`);
   return (await res.json()) as { result?: unknown };
 }
 
@@ -37,13 +39,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const lenRes = await redis(`llen/${MESSAGES_KEY}`);
+    const lenRes = await redis(["LLEN", MESSAGES_KEY]);
     if (!lenRes) {
       return NextResponse.json({ sent: false, reason: "Upstash not configured" });
     }
     const total = Number(lenRes.result ?? 0);
 
-    const digestedRes = await redis(`get/${DIGEST_KEY}`);
+    const digestedRes = await redis(["GET", DIGEST_KEY]);
     const digested = Number(digestedRes?.result ?? 0);
 
     const newCount = total - digested;
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // newest messages are at the head of the list
-    const rangeRes = await redis(`lrange/${MESSAGES_KEY}/0/${newCount - 1}`);
+    const rangeRes = await redis(["LRANGE", MESSAGES_KEY, 0, newCount - 1]);
     const raw = (rangeRes?.result ?? []) as string[];
     const messages: StoredMessage[] = raw.map((entry) => {
       try {
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest) {
       throw new Error(`resend ${emailRes.status}: ${detail.slice(0, 200)}`);
     }
 
-    await redis(`set/${DIGEST_KEY}/${total}`);
+    await redis(["SET", DIGEST_KEY, total]);
     return NextResponse.json({ sent: true, newCount });
   } catch (error) {
     console.error("Digest failed:", error);

@@ -83,6 +83,20 @@ export default function SshTerminal() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sessionIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    try {
+      let sid = window.localStorage.getItem('portfolio-session-id');
+      if (!sid) {
+        sid = crypto.randomUUID();
+        window.localStorage.setItem('portfolio-session-id', sid);
+      }
+      sessionIdRef.current = sid;
+    } catch {
+      sessionIdRef.current = null;
+    }
+  }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,7 +119,7 @@ export default function SshTerminal() {
         const response = await fetch('/api/agent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: question, stream: true })
+          body: JSON.stringify({ query: question, stream: true, sessionId: sessionIdRef.current ?? undefined })
         });
         if (!response.ok || !response.body) {
           const payload = await response.json().catch(() => null);

@@ -14,8 +14,10 @@ export async function POST() {
   }
 
   try {
-    const response = await fetch(`${url}/incr/portfolio:visits`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(["INCR", "portfolio:visits"]),
       cache: "no-store",
     });
 

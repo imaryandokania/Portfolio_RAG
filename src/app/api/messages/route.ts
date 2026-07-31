@@ -40,13 +40,19 @@ export async function POST(request: NextRequest) {
       at: new Date().toISOString()
     });
 
-    const res = await fetch(`${store.url}/lpush/portfolio:messages/${encodeURIComponent(entry)}`, {
-      headers: { Authorization: `Bearer ${store.token}` },
+    const res = await fetch(store.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${store.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(["LPUSH", "portfolio:messages", entry]),
       cache: "no-store"
     });
 
     if (!res.ok) {
-      throw new Error(`upstash ${res.status}`);
+      const detail = await res.text().catch(() => "");
+      throw new Error(`upstash ${res.status}: ${detail.slice(0, 200)}`);
     }
     return NextResponse.json({ stored: true });
   } catch (error) {
@@ -68,8 +74,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(`${store.url}/lrange/portfolio:messages/0/99`, {
-      headers: { Authorization: `Bearer ${store.token}` },
+    const res = await fetch(store.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${store.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(["LRANGE", "portfolio:messages", "0", "99"]),
       cache: "no-store"
     });
     const data = (await res.json()) as { result?: string[] };
