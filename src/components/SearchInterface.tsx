@@ -34,7 +34,7 @@ type MediumPost = {
 type EnrichmentHint = 'skills' | 'impact';
 
 export default function SearchInterface() {
-  const MAX_QUERY_CHARS = 500;
+  const MAX_QUERY_CHARS = 4000;
   const SILENCE_THRESHOLD = 0.02;
   const SILENCE_TIMEOUT_MS = 1500;
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +44,8 @@ export default function SearchInterface() {
     "What is Aryan working on at Microsoft?",
     'Tell me about the ICLR paper',
     'What did he build at Cisco?',
+    'Paste a job description → instant fit check',
+    "What's he pushing to GitHub lately?",
     'try: sudo hire aryan'
   ];
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -1586,6 +1588,7 @@ export default function SearchInterface() {
             <p className="flex flex-wrap justify-center gap-x-4 gap-y-1">
               <a href="/ssh" className="text-emerald-300 hover:text-white transition">$ ssh aryan@portfolio ↗</a>
               <a href="/api/resume" target="_blank" rel="noreferrer" className="text-[#38bdf8] hover:text-white transition">$ curl /api/resume ↗</a>
+              <a href="/api/mcp" target="_blank" rel="noreferrer" className="text-[#7dd3fc] hover:text-white transition">$ mcp add /api/mcp ↗</a>
             </p>
             <p>
               © 2026 Aryan Dokania ·{' '}

@@ -9,7 +9,7 @@ import {
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const CHAT_MODEL = "gpt-4o-mini";
 const MAX_CONTEXT_DOCUMENTS = 6;
-const MAX_QUERY_CHARS = 500;
+const MAX_QUERY_CHARS = 4000;
 
 const docs = buildResumeDocuments();
 let cachedEmbeddings: number[][] | null = null;
@@ -115,6 +115,46 @@ function getClient(): OpenAI {
     apiKey: process.env.OPENAI_API_KEY,
   });
 }
+
+async function fetchGithubActivity(): Promise<string> {
+  try {
+    const res = await fetch(
+      "https://api.github.com/users/imaryandokania/repos?sort=pushed&per_page=6",
+      { headers: { Accept: "application/vnd.github+json" }, next: { revalidate: 3600 } }
+    );
+    if (!res.ok) {
+      return "GitHub API unavailable right now.";
+    }
+    const repos = (await res.json()) as Array<{
+      name: string;
+      description: string | null;
+      language: string | null;
+      stargazers_count: number;
+      pushed_at: string;
+      html_url: string;
+    }>;
+    return repos
+      .map(
+        (r) =>
+          `${r.name} (${r.language ?? "n/a"}, ★${r.stargazers_count}, last push ${r.pushed_at.slice(0, 10)}): ${r.description ?? "no description"} — ${r.html_url}`
+      )
+      .join("\n");
+  } catch {
+    return "GitHub API unavailable right now.";
+  }
+}
+
+const AGENT_TOOLS: OpenAI.Responses.Tool[] = [
+  { type: "web_search_preview" },
+  {
+    type: "function",
+    name: "github_activity",
+    description:
+      "Fetch Aryan's live GitHub repositories with languages, stars, and last-push dates. Use when asked about recent code, open source, or what he is currently building.",
+    parameters: { type: "object", properties: {}, additionalProperties: false },
+    strict: true,
+  },
+];
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (!a.length || !b.length || a.length !== b.length) {
@@ -270,7 +310,7 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: "input_text",
-              text: "You are an Aryan, and answers questions about you (Aryan). Use only the provided context. Respond concisely and reference specific experiences when helpful. Use bullet points only when listing several related items such as education entries, experience highlights, or project details; otherwise prefer flowing sentences. Keep the tone conversational and blend sourced details naturally so it feels like a dialogue rather than a document dump. Respond to only questions related to you.If someone asks wrong, weird question roast them in same way.",
+              text: "You are Aryan's AI agent, speaking as Aryan in first person. Use the provided resume context as ground truth. Respond concisely and reference specific experiences when helpful. Prefer flowing sentences; use bullet points only for genuinely list-like content. Keep the tone conversational. Only answer questions related to Aryan; if someone asks something weird, roast them playfully. You have tools: call github_activity for questions about recent code or open-source work. SPECIAL MODES: (1) If the user pastes what looks like a job description, switch to FIT CHECK mode: analyze it requirement by requirement against the resume, output a markdown table mapping each key requirement to concrete evidence (role/project + result), then a verdict line with a fit rating out of 10 and honest gaps. (2) If asked to get in touch, draft a short intro email on the user's behalf and include a mailto:aryandokania2001@gmail.com link with a suitable subject.",
             },
           ],
         },
@@ -286,17 +326,53 @@ export async function POST(request: NextRequest) {
       ];
 
     if (stream) {
-      const streamingResponse = await client.responses.create({
-        model: CHAT_MODEL,
-        tools: [{ type: "web_search_preview" }],
-        input: inputMessages,
-        stream: true,
-      });
-
       const encoder = new TextEncoder();
       const readable = new ReadableStream<Uint8Array>({
         async start(controller) {
           try {
+            // Agent loop: resolve tool calls (visibly), then stream the final answer.
+            let loopInput: OpenAI.Responses.ResponseInput = [...inputMessages];
+            for (let hop = 0; hop < 3; hop += 1) {
+              const draft = await client.responses.create({
+                model: CHAT_MODEL,
+                tools: AGENT_TOOLS,
+                input: loopInput,
+              });
+
+              const functionCalls = draft.output.filter(
+                (item): item is OpenAI.Responses.ResponseFunctionToolCall =>
+                  item.type === "function_call"
+              );
+
+              if (!functionCalls.length) {
+                // No tools needed — stream a final answer.
+                break;
+              }
+
+              loopInput = [...loopInput, ...draft.output];
+              for (const call of functionCalls) {
+                controller.enqueue(
+                  encoder.encode(`\`⚙ ${call.name}()\` — fetching live data…\n\n`)
+                );
+                let output = "Tool not available.";
+                if (call.name === "github_activity") {
+                  output = await fetchGithubActivity();
+                }
+                loopInput.push({
+                  type: "function_call_output",
+                  call_id: call.call_id,
+                  output,
+                });
+              }
+            }
+
+            const streamingResponse = await client.responses.create({
+              model: CHAT_MODEL,
+              tools: AGENT_TOOLS,
+              input: loopInput,
+              stream: true,
+            });
+
             for await (const event of streamingResponse) {
               if (event.type === "response.output_text.delta" && event.delta) {
                 controller.enqueue(encoder.encode(event.delta));
