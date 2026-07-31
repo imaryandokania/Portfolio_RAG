@@ -26,6 +26,21 @@ const CareerGraph = dynamic(() => import('./CareerGraph'), {
 import RecruiterView from './RecruiterView';
 import GuidedTour from './GuidedTour';
 
+const SLASH_COMMANDS = [
+  { cmd: '/tour', desc: 'AI-guided walkthrough' },
+  { cmd: '/experience', desc: 'ask about work experience' },
+  { cmd: '/projects', desc: 'ask about projects' },
+  { cmd: '/research', desc: 'ask about publications' },
+  { cmd: '/skills', desc: 'ask about the tech stack' },
+  { cmd: '/education', desc: 'ask about education' },
+  { cmd: '/achievements', desc: 'ask about awards' },
+  { cmd: '/github', desc: 'live GitHub activity' },
+  { cmd: '/ssh', desc: 'command-line version' },
+  { cmd: '/recruiter', desc: 'clean printable resume' },
+  { cmd: '/sudo', desc: 'hire_sequence.sh 🔓' },
+  { cmd: '/clear', desc: 'reset the conversation' }
+];
+
 type MediumPost = {
   title: string;
   link: string;
@@ -52,6 +67,7 @@ export default function SearchInterface() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [recruiterMode, setRecruiterMode] = useState(false);
   const [tourActive, setTourActive] = useState(false);
+  const [slashIndex, setSlashIndex] = useState(0);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const visitCountedRef = useRef(false);
   const [crtOff, setCrtOff] = useState(false);
@@ -916,6 +932,81 @@ export default function SearchInterface() {
     };
   }, []);
 
+  const runSudoEgg = (query: string) => {
+    setLastQuery(query || 'sudo hire aryan');
+    setError(null);
+    setAnswerEnrichment([]);
+    setAgentAnswer(
+      [
+        '```',
+        '[sudo] password for recruiter: ********',
+        'ACCESS GRANTED 🔓',
+        '',
+        '> initiating hire_sequence.sh ...',
+        '> compiling 4 publications ......... done',
+        '> loading Microsoft · Cisco · Oracle experience ... done',
+        '> deploying resume to your inbox ... ready',
+        '```',
+        '',
+        `Nice try — you found the easter egg. Skip the queue: [email me](mailto:${resumeData.contact.email}) or ping me on [LinkedIn](https://${resumeData.contact.linkedin}).`
+      ].join('\n')
+    );
+  };
+
+  const slashMatches = searchQuery.startsWith('/')
+    ? SLASH_COMMANDS.filter((c) => c.cmd.startsWith(searchQuery.trim().toLowerCase()))
+    : [];
+
+  const executeSlash = (cmd: string) => {
+    setSearchQuery('');
+    setSlashIndex(0);
+    switch (cmd) {
+      case '/tour':
+        setTourActive(true);
+        break;
+      case '/ssh':
+        window.location.href = '/ssh';
+        break;
+      case '/recruiter':
+        setRecruiterMode(true);
+        break;
+      case '/sudo':
+        runSudoEgg('sudo hire aryan');
+        break;
+      case '/clear':
+        setConversationTurns([]);
+        setAgentAnswer('');
+        setLastQuery('');
+        setError(null);
+        setAnswerEnrichment([]);
+        break;
+      case '/github':
+        void queryAgent('What has Aryan been pushing to GitHub lately?', { viaVoice: false });
+        break;
+      default:
+        handleSectionSelect(cmd.slice(1));
+    }
+  };
+
+  const handleConsoleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!slashMatches.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSlashIndex((i) => (i + 1) % slashMatches.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      setSearchQuery(slashMatches[Math.min(slashIndex, slashMatches.length - 1)].cmd);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      executeSlash(slashMatches[Math.min(slashIndex, slashMatches.length - 1)].cmd);
+    } else if (e.key === 'Escape') {
+      setSearchQuery('');
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setVoiceSessionStage('idle');
@@ -923,6 +1014,13 @@ export default function SearchInterface() {
     stopVoicePlayback();
 
     const normalized = searchQuery.trim().toLowerCase();
+    if (normalized.startsWith('/')) {
+      const match = SLASH_COMMANDS.find((c) => c.cmd === normalized) ?? slashMatches[0];
+      if (match) {
+        executeSlash(match.cmd);
+      }
+      return;
+    }
     if (normalized === 'ssh' || normalized === 'ssh aryan@portfolio') {
       window.location.href = '/ssh';
       return;
@@ -933,24 +1031,7 @@ export default function SearchInterface() {
       return;
     }
     if (normalized.startsWith('sudo')) {
-      setLastQuery(searchQuery.trim());
-      setError(null);
-      setAnswerEnrichment([]);
-      setAgentAnswer(
-        [
-          '```',
-          '[sudo] password for recruiter: ********',
-          'ACCESS GRANTED 🔓',
-          '',
-          '> initiating hire_sequence.sh ...',
-          '> compiling 3 publications ......... done',
-          '> loading Microsoft · Cisco · Oracle experience ... done',
-          '> deploying resume to your inbox ... ready',
-          '```',
-          '',
-          `Nice try — you found the easter egg. Skip the queue: [email me](mailto:${resumeData.contact.email}) or ping me on [LinkedIn](https://${resumeData.contact.linkedin}).`
-        ].join('\n')
-      );
+      runSudoEgg(searchQuery.trim());
       return;
     }
 
@@ -1154,46 +1235,31 @@ export default function SearchInterface() {
                 >
                   --recruiter
                 </button>
-                <p className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-emerald-300 sm:flex">
-                  <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                  online
-                </p>
               </div>
             </div>
-            <div className="relative p-8 lg:p-12">
-              <div className="space-y-6">
-                <div className="text-left space-y-4">
-                  <motion.h1
-                    className="glitch text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight cyberpunk-glow"
-                    data-text={resumeData.name}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                  >
-                    {resumeData.name}
-                  </motion.h1>
-                  <motion.p
-                    className="text-[#38bdf8] text-lg md:text-xl"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    {resumeData.title}
-                    {heroEducation && (
-                      <span className="text-white/50"> · {heroEducation}</span>
-                    )}
-                  </motion.p>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                  >
-                    <TerminalBoot />
-                  </motion.div>
-                </div>
+            <div className="relative grid gap-8 p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-10">
+              <div className="space-y-5">
+                <motion.h1
+                  className="glitch text-4xl font-bold tracking-tight text-white leading-tight cyberpunk-glow md:text-6xl"
+                  data-text={resumeData.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 }}
+                >
+                  {resumeData.name}
+                </motion.h1>
+                <motion.p
+                  className="text-lg text-[#38bdf8] md:text-xl"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {resumeData.title}
+                  {heroEducation && <span className="text-white/50"> · {heroEducation}</span>}
+                </motion.p>
                 {resumeData.sections.summary && (
-                  <motion.p 
-                    className="text-white/70 text-base md:text-lg leading-relaxed max-w-2xl"
+                  <motion.p
+                    className="text-base leading-relaxed text-white/70"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.35 }}
@@ -1201,35 +1267,33 @@ export default function SearchInterface() {
                     {resumeData.sections.summary[0]}
                   </motion.p>
                 )}
-
-                <motion.div 
-                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                <motion.div
+                  className="flex flex-wrap gap-2"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
                   {contactEntries.map(({ label, value, href, icon }) => (
-                    <motion.a
+                    <a
                       key={label}
                       href={href}
                       target={href?.startsWith('http') ? '_blank' : undefined}
                       rel={href?.startsWith('http') ? 'noreferrer' : undefined}
-                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 transition-all duration-300 hover:border-[#38bdf8]/60 hover:bg-[#38bdf8]/10"
-                      whileHover={{ y: -4 }}
+                      className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-xs text-white/70 transition hover:border-[#38bdf8]/60 hover:text-white"
                     >
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_60%)]" />
-                      <div className="relative space-y-1">
-                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">{label}</p>
-                        <div className="flex items-center gap-2 text-sm md:text-base text-white/90 break-all">
-                          {icon && <span>{icon}</span>}
-                          <span>{value}</span>
-                        </div>
-                      </div>
-                    </motion.a>
+                      {icon && <span>{icon}</span>}
+                      <span>{value}</span>
+                    </a>
                   ))}
                 </motion.div>
               </div>
-
+              <motion.div
+                initial={{ opacity: 0, x: 15 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35 }}
+              >
+                <TerminalBoot />
+              </motion.div>
             </div>
           </motion.div>
 
@@ -1273,6 +1337,7 @@ export default function SearchInterface() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     ref={queryInputRef}
+                    onKeyDown={handleConsoleKeyDown}
                     className="h-14 flex-1 bg-transparent font-mono text-base text-white outline-none placeholder:text-white/35 md:text-lg"
                     placeholder={PLACEHOLDERS[placeholderIndex]}
                     aria-label="Ask Aryan's AI agent"
@@ -1322,6 +1387,32 @@ export default function SearchInterface() {
                     )}
                   </AnimatePresence>
                 </div>
+                {slashMatches.length > 0 && (
+                  <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-black/90">
+                    <p className="border-b border-white/5 px-4 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white/30">
+                      commands · ↑↓ navigate · ⏎ run · tab complete
+                    </p>
+                    {slashMatches.map((c, i) => (
+                      <button
+                        type="button"
+                        key={c.cmd}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          executeSlash(c.cmd);
+                        }}
+                        onMouseEnter={() => setSlashIndex(i)}
+                        className={`flex w-full items-baseline gap-3 px-4 py-2 text-left font-mono text-sm transition ${
+                          i === slashIndex
+                            ? 'bg-emerald-400/10 text-emerald-300'
+                            : 'text-white/70 hover:bg-white/5'
+                        }`}
+                      >
+                        <span>{c.cmd}</span>
+                        <span className="text-xs text-white/40">{c.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </form>
               <p className="mt-2.5 px-1 text-xs text-white/40">
                 {voiceError ? (
@@ -1332,7 +1423,7 @@ export default function SearchInterface() {
                   <>
                     <kbd className="rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] text-emerald-300">⏎</kbd> to ask
                     {' · '}
-                    <kbd className="rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] text-emerald-300">/</kbd> to focus
+                    <kbd className="rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] text-emerald-300">/</kbd> for commands
                     {' · mic to speak · paste a job description for a fit check'}
                   </>
                 )}
@@ -1612,7 +1703,6 @@ export default function SearchInterface() {
         <span className="bg-emerald-400/90 px-3 py-1 font-semibold text-black">ARYAN.SYS</span>
         <span className="px-3 py-1 text-emerald-300">● online</span>
         <span className="px-3 py-1 text-white/50">{resumeData.contact.location.toLowerCase()}</span>
-        <span className="px-3 py-1 text-white/50">microsoft · copilot studio</span>
         <span className="px-3 py-1 text-white/50">{resumeData.sections.research.length} publications</span>
         {visitorCount !== null && (
           <span className="px-3 py-1 text-[#38bdf8]/80">visitor #{visitorCount}</span>
@@ -1632,9 +1722,6 @@ export default function SearchInterface() {
         >
           --recruiter
         </button>
-        <span className="px-3 py-1 text-white/40">
-          press <kbd className="rounded border border-white/20 bg-white/10 px-1 text-emerald-300">/</kbd> to query
-        </span>
         <span className="bg-white/10 px-3 py-1 text-white/70">{missionClock}</span>
       </div>
     </div>

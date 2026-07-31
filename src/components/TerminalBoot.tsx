@@ -11,11 +11,11 @@ type BootLine = {
 
 const BOOT_LINES: BootLine[] = [
   { prompt: '$', text: 'whoami', className: 'text-emerald-300' },
-  { text: 'aryan_dokania — research engineer @ microsoft · copilot studio', className: 'text-white/80', instant: true },
+  { text: 'aryan_dokania — builds AI agents & the systems behind them', className: 'text-white/80', instant: true },
   { prompt: '$', text: 'aryan --status', className: 'text-emerald-300' },
-  { text: '● ONLINE · Seattle, WA · MS CS @ UC San Diego (GPA 3.96)', className: 'text-white/80', instant: true },
+  { text: '● online · seattle · 4 publications · gpa 3.96/4.0', className: 'text-white/80', instant: true },
   { prompt: '$', text: './ask_me_anything.sh', className: 'text-emerald-300' },
-  { text: 'RAG agent initialized. Query console ready ▊', className: 'text-[#38bdf8]', instant: true }
+  { text: 'RAG agent ready — ask anything below ▊', className: 'text-[#38bdf8]', instant: true }
 ];
 
 const TYPE_SPEED_MS = 34;

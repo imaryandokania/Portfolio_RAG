@@ -232,14 +232,10 @@ function Scene() {
 export default function CareerGraph() {
   return (
     <div id="career-graph" className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_45px_rgba(16,185,129,0.05)]">
-      <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.03] px-5 py-3">
-        <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-        <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-        <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-        <p className="ml-3 font-mono text-xs text-white/50">
-          <span className="text-emerald-400">aryan@portfolio</span>
-          <span className="text-white/40">:~$ </span>
-          <span className="text-white/80">python3 visualize.py --graph=career</span>
+      <div className="flex items-center border-b border-white/10 bg-white/[0.02] px-6 py-3">
+        <p className="font-mono text-xs text-white/50">
+          <span className="text-emerald-500">$ </span>
+          <span className="text-white/75">python3 visualize.py --graph=career</span>
         </p>
         <p className="ml-auto hidden font-mono text-[10px] uppercase tracking-widest text-white/30 sm:block">
           drag to orbit · click a node

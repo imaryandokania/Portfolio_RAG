@@ -22,14 +22,10 @@ function TerminalPanel({
 }) {
   return (
     <motion.section id={id} className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_45px_rgba(16,185,129,0.05)]" {...sectionReveal}>
-      <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.03] px-5 py-3">
-        <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-        <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-        <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-        <p className="ml-3 font-mono text-xs text-white/50">
-          <span className="text-emerald-400">aryan@portfolio</span>
-          <span className="text-white/40">:~$ </span>
-          <span className="text-white/80">{command}</span>
+      <div className="border-b border-white/10 bg-white/[0.02] px-6 py-3">
+        <p className="font-mono text-xs text-white/50">
+          <span className="text-emerald-500">$ </span>
+          <span className="text-white/75">{command}</span>
         </p>
       </div>
       <div className="p-6 md:p-8">{children}</div>

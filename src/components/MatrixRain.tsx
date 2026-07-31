@@ -69,7 +69,7 @@ export default function MatrixRain() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-0 opacity-[0.22]"
+      className="pointer-events-none fixed inset-0 z-0 opacity-[0.1]"
       aria-hidden="true"
     />
   );
