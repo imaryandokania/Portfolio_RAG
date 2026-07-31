@@ -71,10 +71,6 @@ export default function SearchInterface() {
 
   const contactEntries = useMemo(
     () => [
-      {
-        label: 'Location',
-        value: resumeData.contact.location
-      },
       // {
       //   label: 'Phone',
       //   value: resumeData.contact.phone,
@@ -963,16 +959,8 @@ export default function SearchInterface() {
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(52,211,153,0.15),_transparent_60%)]" />
-        <div
-          className="absolute inset-0 opacity-20 mix-blend-screen"
-          style={{
-            backgroundImage:
-              'linear-gradient(90deg, rgba(56, 189, 248, 0.15) 1px, transparent 1px), linear-gradient(0deg, rgba(56, 189, 248, 0.12) 1px, transparent 1px)',
-            backgroundSize: '120px 120px'
-          }}
-        />
       </div>
-      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 relative z-10">
+      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 pb-24 relative z-10">
         <motion.div 
           className="w-full max-w-6xl space-y-10"
           initial={{ opacity: 0, y: 20 }}
@@ -1005,14 +993,6 @@ export default function SearchInterface() {
             <div className="relative p-8 lg:p-12">
               <div className="space-y-6">
                 <div className="text-left space-y-4">
-                  <motion.div 
-                    className="flex w-fit items-center gap-2 rounded-full border border-[#38bdf8]/50 bg-black/60 px-4 py-2 text-sm uppercase tracking-widest text-[#38bdf8]"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    Portfolio
-                  </motion.div>
                   <motion.h1
                     className="glitch text-5xl md:text-6xl font-bold text-white leading-tight cyberpunk-glow"
                     data-text={resumeData.name}
@@ -1053,7 +1033,7 @@ export default function SearchInterface() {
                 )}
 
                 <motion.div 
-                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
@@ -1083,125 +1063,6 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
-          {voiceSessionStage === 'idle' && !isSearching && agentAnswer && (
-            <motion.div
-              className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.08)]"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.48 }}
-            >
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_65%)]" />
-              <div className="relative flex flex-col gap-4">
-                <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#38bdf8] w-fit">
-                  Hi, I am Aryan 👋
-                </span>
-                {lastQuery && (
-                  <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-                    Your Question: “{lastQuery}”
-                  </p>
-                )}
-                <div className="text-white/80 text-sm md:text-base leading-relaxed">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      strong: (props) => (
-                        <span className="text-white font-semibold" {...props} />
-                      ),
-                      em: (props) => (
-                        <span className="italic text-white/80" {...props} />
-                      ),
-                      p: (props) => (
-                        <p className="mb-3 last:mb-0" {...props} />
-                      ),
-                      ul: (props) => (
-                        <ul className="list-disc pl-5 space-y-2" {...props} />
-                      ),
-                      ol: (props) => (
-                        <ol className="list-decimal pl-5 space-y-2" {...props} />
-                      ),
-                      li: (props) => <li className="pl-1" {...props} />,
-                      a: (props) => (
-                        <a className="text-[#38bdf8] underline decoration-[#38bdf8]/40 hover:text-white" {...props} />
-                      ),
-                      pre: (props) => (
-                        <pre
-                          className="my-3 overflow-x-auto rounded-xl border border-emerald-400/20 bg-black/80 p-4 font-mono text-xs leading-relaxed text-emerald-300"
-                          {...props}
-                        />
-                      ),
-                      code: (props) => <code className="font-mono" {...props} />
-                    }}
-                  >
-                    {agentAnswer}
-                  </ReactMarkdown>
-                </div>
-                {conversationTurns.length > 0 && (
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleResetConversation}
-                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/70 transition hover:border-white/40"
-                    >
-                      Reset conversation
-                    </button>
-                  </div>
-                )}
-                {answerEnrichment.length > 0 && (
-                  <div className="mt-6 space-y-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-white/50">
-                      Context Boosters
-                    </p>
-                    <div className="space-y-4">
-                      {answerEnrichment.includes('skills') && (
-                        <motion.div
-                          className="rounded-3xl border border-white/10 bg-white/5 p-2"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <SkillClusterBars />
-                        </motion.div>
-                      )}
-                      {answerEnrichment.includes('impact') && (
-                        <motion.div
-                          className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#0f172a] to-[#020617] p-4"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <div className="flex items-center justify-between flex-wrap gap-2">
-                            <p className="text-xs uppercase tracking-[0.3em] text-white/60">
-                              Measurable Impact
-                            </p>
-                            <span className="text-[10px] uppercase tracking-[0.4em] text-white/30">
-                              resume metrics
-                            </span>
-                          </div>
-                          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                            {impactHighlights.map((highlight) => (
-                              <div
-                                key={highlight.label}
-                                className="rounded-2xl border border-white/10 bg-black/30 p-4"
-                              >
-                                <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">
-                                  {highlight.label}
-                                </p>
-                                <p className="mt-2 text-2xl font-semibold" style={{ color: highlight.accent }}>
-                                  {highlight.value}
-                                </p>
-                                <p className="mt-2 text-xs text-white/60 leading-relaxed">
-                                  {highlight.detail}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
           {/* Search Panel */}
           <motion.div
             className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(52,211,153,0.12)]"
@@ -1209,13 +1070,6 @@ export default function SearchInterface() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <motion.h1 
-              className="sr-only"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {resumeData.name}
-            </motion.h1>
             <motion.form
               onSubmit={handleSearch}
               className="w-full"
@@ -1365,6 +1219,154 @@ export default function SearchInterface() {
             </div> */}
           </motion.div>
 
+          {voiceSessionStage === 'idle' && !isSearching && agentAnswer && (
+            <motion.div
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.08)]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.48 }}
+            >
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_65%)]" />
+              <div className="relative flex flex-col gap-4">
+                <span className="rounded-full border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#38bdf8] w-fit">
+                  Hi, I am Aryan 👋
+                </span>
+                {lastQuery && (
+                  <p className="text-xs uppercase tracking-[0.25em] text-white/40">
+                    Your Question: “{lastQuery}”
+                  </p>
+                )}
+                <div className="text-white/80 text-sm md:text-base leading-relaxed">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      strong: (props) => (
+                        <span className="text-white font-semibold" {...props} />
+                      ),
+                      em: (props) => (
+                        <span className="italic text-white/80" {...props} />
+                      ),
+                      p: (props) => (
+                        <p className="mb-3 last:mb-0" {...props} />
+                      ),
+                      ul: (props) => (
+                        <ul className="list-disc pl-5 space-y-2" {...props} />
+                      ),
+                      ol: (props) => (
+                        <ol className="list-decimal pl-5 space-y-2" {...props} />
+                      ),
+                      li: (props) => <li className="pl-1" {...props} />,
+                      a: (props) => (
+                        <a className="text-[#38bdf8] underline decoration-[#38bdf8]/40 hover:text-white" {...props} />
+                      ),
+                      pre: (props) => (
+                        <pre
+                          className="my-3 overflow-x-auto rounded-xl border border-emerald-400/20 bg-black/80 p-4 font-mono text-xs leading-relaxed text-emerald-300"
+                          {...props}
+                        />
+                      ),
+                      code: (props) => <code className="font-mono" {...props} />
+                    }}
+                  >
+                    {agentAnswer}
+                  </ReactMarkdown>
+                </div>
+                {conversationTurns.length > 0 && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResetConversation}
+                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/70 transition hover:border-white/40"
+                    >
+                      Reset conversation
+                    </button>
+                  </div>
+                )}
+                {answerEnrichment.length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/50">
+                      Context Boosters
+                    </p>
+                    <div className="space-y-4">
+                      {answerEnrichment.includes('skills') && (
+                        <motion.div
+                          className="rounded-3xl border border-white/10 bg-white/5 p-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <SkillClusterBars />
+                        </motion.div>
+                      )}
+                      {answerEnrichment.includes('impact') && (
+                        <motion.div
+                          className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#0f172a] to-[#020617] p-4"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+                              Measurable Impact
+                            </p>
+                            <span className="text-[10px] uppercase tracking-[0.4em] text-white/30">
+                              resume metrics
+                            </span>
+                          </div>
+                          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                            {impactHighlights.map((highlight) => (
+                              <div
+                                key={highlight.label}
+                                className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                              >
+                                <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">
+                                  {highlight.label}
+                                </p>
+                                <p className="mt-2 text-2xl font-semibold" style={{ color: highlight.accent }}>
+                                  {highlight.value}
+                                </p>
+                                <p className="mt-2 text-xs text-white/60 leading-relaxed">
+                                  {highlight.detail}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Results Area */}
+          <AnimatePresence>
+            <motion.div className="mt-8 space-y-4">
+              {!isSearching && error && (
+                <motion.div
+                  className="text-center text-[#ef4444]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              {lastQuery && !isSearching && !agentAnswer && !error && (
+                <motion.div 
+                  className="text-center text-[#34d399]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  The agent could not synthesize an answer. Try rephrasing or asking about another part of the resume.
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          <ResumeSections />
+
           {(mediumPosts.length > 0 || isMediumLoading || mediumError) && (
             <motion.div
               className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 shadow-[0_0_45px_rgba(56,189,248,0.08)] space-y-6"
@@ -1437,34 +1439,24 @@ export default function SearchInterface() {
             </motion.div>
           )}
 
-          <ResumeSections />
 
-          {/* Results Area */}
-          <AnimatePresence>
-            <motion.div className="mt-8 space-y-4">
-              {!isSearching && error && (
-                <motion.div
-                  className="text-center text-[#ef4444]"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  {error}
-                </motion.div>
-              )}
-
-              {lastQuery && !isSearching && !agentAnswer && !error && (
-                <motion.div 
-                  className="text-center text-[#34d399]"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  The agent could not synthesize an answer. Try rephrasing or asking about another part of the resume.
-                </motion.div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          {/* Footer */}
+          <footer className="flex flex-col items-center gap-2 pt-4 pb-2 font-mono text-xs text-white/40">
+            <p>
+              <span className="text-emerald-400">$</span> echo "built with Next.js · RAG · OpenAI · Three.js"
+            </p>
+            <p>
+              © 2026 Aryan Dokania ·{' '}
+              <a
+                href="https://github.com/imaryandokania/Portfolio_RAG"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#38bdf8] hover:text-white transition"
+              >
+                view source ↗
+              </a>
+            </p>
+          </footer>
         </motion.div>
       </div>
 
