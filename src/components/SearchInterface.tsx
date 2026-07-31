@@ -12,6 +12,7 @@ import VoiceOrb from './VoiceOrb';
 import TerminalBoot from './TerminalBoot';
 import ResumeSections from './ResumeSections';
 import MatrixRain from './MatrixRain';
+import GithubHeatmap from './GithubHeatmap';
 
 const CyberBackground = dynamic(() => import('./CyberBackground'), { ssr: false });
 const CareerGraph = dynamic(() => import('./CareerGraph'), {
@@ -54,6 +55,10 @@ export default function SearchInterface() {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const visitCountedRef = useRef(false);
   const [crtOff, setCrtOff] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  const soundOnRef = useRef(false);
+  const tickCtxRef = useRef<AudioContext | null>(null);
+  const lastTickRef = useRef(0);
   const konamiRef = useRef<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
@@ -166,6 +171,38 @@ export default function SearchInterface() {
 
     return `${compactDegree} @ ${compactUniversity}`.trim();
   }, [primaryEducation]);
+
+  const playTick = useCallback(() => {
+    if (!soundOnRef.current) return;
+    const now = performance.now();
+    if (now - lastTickRef.current < 45) return; // throttle
+    lastTickRef.current = now;
+    try {
+      if (!tickCtxRef.current) {
+        tickCtxRef.current = new AudioContext();
+      }
+      const ctx = tickCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = 1400 + Math.random() * 900;
+      gain.gain.setValueAtTime(0.025, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.03);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.035);
+    } catch {
+      // audio unavailable — ignore
+    }
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundOn((prev) => {
+      soundOnRef.current = !prev;
+      return !prev;
+    });
+  }, []);
 
   useEffect(() => {
     const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -520,6 +557,7 @@ export default function SearchInterface() {
               break;
             }
             answerText += decoder.decode(value, { stream: true });
+            playTick();
             setAgentAnswer(answerText + ' ▊');
           }
           answerText = answerText.trim();
@@ -570,7 +608,7 @@ export default function SearchInterface() {
         setIsSearching(false);
       }
     },
-    [speakText, stopVoicePlayback]
+    [speakText, stopVoicePlayback, playTick]
   );
 
   const handleTranscription = useCallback(
@@ -1507,6 +1545,8 @@ export default function SearchInterface() {
 
           <ResumeSections />
 
+          <GithubHeatmap />
+
           {(mediumPosts.length > 0 || isMediumLoading || mediumError) && (
             <motion.div
               className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 shadow-[0_0_45px_rgba(56,189,248,0.08)] space-y-6"
@@ -1619,8 +1659,16 @@ export default function SearchInterface() {
         )}
         <button
           type="button"
-          onClick={() => setRecruiterMode(true)}
+          onClick={toggleSound}
           className="ml-auto px-3 py-1 text-white/50 transition hover:text-emerald-300"
+          title="Terminal keystroke sounds while the agent streams"
+        >
+          {soundOn ? 'snd:on' : 'snd:off'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setRecruiterMode(true)}
+          className="px-3 py-1 text-white/50 transition hover:text-emerald-300"
         >
           --recruiter
         </button>

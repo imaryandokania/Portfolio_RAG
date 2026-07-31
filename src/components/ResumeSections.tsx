@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { resumeData } from '../data/resumeData';
 
@@ -38,6 +39,22 @@ function TerminalPanel({
 
 export default function ResumeSections() {
   const { experience, projects, research, education, achievements, skills } = resumeData.sections;
+  const [citations, setCitations] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/citations')
+      .then((res) => res.json())
+      .then((data: { counts?: Record<string, number> }) => {
+        if (!cancelled && data?.counts) {
+          setCitations(data.counts);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const skillGroups = [
     { label: 'languages', items: skills.languages },
@@ -181,6 +198,11 @@ export default function ResumeSections() {
                 <h3 className="text-base font-semibold text-white group-hover:text-[#7dd3fc] transition">
                   {paper.title}
                 </h3>
+                {citations[paper.title] !== undefined && (
+                  <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-mono text-[10px] text-emerald-300">
+                    cited by {citations[paper.title]}
+                  </span>
+                )}
               </div>
               <p className="mt-2 font-mono text-xs text-white/50">
                 {paper.authors.join(', ')}
