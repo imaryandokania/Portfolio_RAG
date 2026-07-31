@@ -191,9 +191,10 @@ function buildContextSection(topDocs: RankedDoc[]): string {
 export async function POST(request: NextRequest) {
   try {
     const client = getClient();
-    const { query, contextTurns } = (await request.json()) as {
+    const { query, contextTurns, stream } = (await request.json()) as {
       query?: string;
       contextTurns?: ConversationTurn[];
+      stream?: boolean;
     };
 
     if (!query || !query.trim()) {
@@ -263,10 +264,7 @@ export async function POST(request: NextRequest) {
           .join("\n\n")}\n\n`
       : "";
 
-    const response = await client.responses.create({
-      model: CHAT_MODEL,
-      tools: [{ type: "web_search_preview" }],
-      input: [
+    const inputMessages = [
         {
           role: "system",
           content: [
@@ -285,7 +283,46 @@ export async function POST(request: NextRequest) {
             },
           ],
         },
-      ],
+      ];
+
+    if (stream) {
+      const streamingResponse = await client.responses.create({
+        model: CHAT_MODEL,
+        tools: [{ type: "web_search_preview" }],
+        input: inputMessages,
+        stream: true,
+      });
+
+      const encoder = new TextEncoder();
+      const readable = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          try {
+            for await (const event of streamingResponse) {
+              if (event.type === "response.output_text.delta" && event.delta) {
+                controller.enqueue(encoder.encode(event.delta));
+              }
+            }
+          } catch (err) {
+            console.error("Streaming error:", err);
+          } finally {
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(readable, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+          "x-enrichment": JSON.stringify(enrichmentHints),
+        },
+      });
+    }
+
+    const response = await client.responses.create({
+      model: CHAT_MODEL,
+      tools: [{ type: "web_search_preview" }],
+      input: inputMessages,
     });
 
     const answer = response.output_text?.trim();

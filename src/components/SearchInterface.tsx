@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { resumeData } from '../data/resumeData';
@@ -12,6 +12,9 @@ import VoiceOrb from './VoiceOrb';
 import TerminalBoot from './TerminalBoot';
 import ResumeSections from './ResumeSections';
 import MatrixRain from './MatrixRain';
+import CareerGraph from './CareerGraph';
+import RecruiterView from './RecruiterView';
+import GuidedTour from './GuidedTour';
 
 type MediumPost = {
   title: string;
@@ -26,6 +29,19 @@ export default function SearchInterface() {
   const SILENCE_THRESHOLD = 0.02;
   const SILENCE_TIMEOUT_MS = 1500;
   const [searchQuery, setSearchQuery] = useState('');
+  const { scrollYProgress } = useScroll();
+  const PLACEHOLDERS = [
+    'What do you want to know about me?',
+    "What is Aryan working on at Microsoft?",
+    'Tell me about the ICLR paper',
+    'What did he build at Cisco?',
+    'try: sudo hire aryan'
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [recruiterMode, setRecruiterMode] = useState(false);
+  const [tourActive, setTourActive] = useState(false);
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const visitCountedRef = useRef(false);
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [agentAnswer, setAgentAnswer] = useState('');
@@ -137,6 +153,29 @@ export default function SearchInterface() {
 
     return `${compactDegree} @ ${compactUniversity}`.trim();
   }, [primaryEducation]);
+
+  useEffect(() => {
+    if (visitCountedRef.current) {
+      return;
+    }
+    visitCountedRef.current = true;
+    fetch('/api/visits', { method: 'POST' })
+      .then((res) => res.json())
+      .then((data: { enabled?: boolean; count?: number | null }) => {
+        if (data?.enabled && typeof data.count === 'number') {
+          setVisitorCount(data.count);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPlaceholderIndex((i) => (i + 1) % PLACEHOLDERS.length);
+    }, 3500);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
@@ -413,6 +452,8 @@ export default function SearchInterface() {
           throw new Error(`Query is too long. Please stay under ${MAX_QUERY_CHARS} characters.`);
         }
 
+        const useStreaming = !options?.viaVoice;
+
         const response = await fetch('/api/agent', {
           method: 'POST',
           headers: {
@@ -420,7 +461,8 @@ export default function SearchInterface() {
           },
           body: JSON.stringify({
             query: normalizedQuery,
-            contextTurns: payloadTurns.length ? payloadTurns : undefined
+            contextTurns: payloadTurns.length ? payloadTurns : undefined,
+            stream: useStreaming
           })
         });
 
@@ -429,13 +471,41 @@ export default function SearchInterface() {
           throw new Error(payload?.error ?? 'Failed to query the AI agent.');
         }
 
-        const payload = (await response.json()) as {
-          answer?: string;
-          enrichment?: EnrichmentHint[];
-        };
+        let answerText = '';
 
-        const answerText = payload.answer ?? '';
-        setAnswerEnrichment(payload.enrichment ?? []);
+        const contentType = response.headers.get('Content-Type') ?? '';
+        if (useStreaming && contentType.includes('text/plain') && response.body) {
+          // terminal-style token streaming
+          const enrichmentHeader = response.headers.get('x-enrichment');
+          try {
+            setAnswerEnrichment(enrichmentHeader ? (JSON.parse(enrichmentHeader) as EnrichmentHint[]) : []);
+          } catch {
+            setAnswerEnrichment([]);
+          }
+          setLastQuery(normalizedQuery);
+          setIsSearching(false);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) {
+              break;
+            }
+            answerText += decoder.decode(value, { stream: true });
+            setAgentAnswer(answerText + ' ▊');
+          }
+          answerText = answerText.trim();
+          setAgentAnswer(answerText);
+        } else {
+          const payload = (await response.json()) as {
+            answer?: string;
+            enrichment?: EnrichmentHint[];
+          };
+
+          answerText = payload.answer ?? '';
+          setAnswerEnrichment(payload.enrichment ?? []);
+        }
 
         if (options?.viaVoice) {
           setVoiceSessionAnswer(answerText);
@@ -788,6 +858,11 @@ export default function SearchInterface() {
     stopVoicePlayback();
 
     const normalized = searchQuery.trim().toLowerCase();
+    if (normalized === 'tour' || normalized === 'take the tour' || normalized === './tour.sh') {
+      setSearchQuery('');
+      setTourActive(true);
+      return;
+    }
     if (normalized.startsWith('sudo')) {
       setLastQuery(searchQuery.trim());
       setError(null);
@@ -828,6 +903,10 @@ export default function SearchInterface() {
     const turns = conversationTurns.length ? conversationTurns : undefined;
     void queryAgent(prompt, { viaVoice: false, contextTurns: turns });
   };
+
+  if (recruiterMode) {
+    return <RecruiterView onExit={() => setRecruiterMode(false)} />;
+  }
 
   return (
     <div className="relative">
@@ -954,6 +1033,10 @@ export default function SearchInterface() {
           </motion.div>
         )}
       </AnimatePresence>
+      <motion.div
+        className="fixed inset-x-0 top-0 z-50 h-[2px] origin-left bg-gradient-to-r from-emerald-400 via-[#38bdf8] to-emerald-400"
+        style={{ scaleX: scrollYProgress }}
+      />
       <CyberBackground />
       <MatrixRain />
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -985,16 +1068,34 @@ export default function SearchInterface() {
                 <span className="text-white/40">:~$ </span>
                 <span className="text-white/80">./init_portfolio --mode=rag</span>
               </p>
-              <p className="ml-auto hidden items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-emerald-300 sm:flex">
-                <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                online
-              </p>
+              <div className="ml-auto flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTourActive(true)}
+                  className="rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/60 transition hover:border-[#38bdf8]/60 hover:text-[#38bdf8]"
+                  title="AI-guided walkthrough"
+                >
+                  ./tour.sh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecruiterMode(true)}
+                  className="rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/60 transition hover:border-emerald-400/60 hover:text-emerald-300"
+                  title="Clean, printable resume view"
+                >
+                  --recruiter
+                </button>
+                <p className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-emerald-300 sm:flex">
+                  <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                  online
+                </p>
+              </div>
             </div>
             <div className="relative p-8 lg:p-12">
               <div className="space-y-6">
                 <div className="text-left space-y-4">
                   <motion.h1
-                    className="glitch text-5xl md:text-6xl font-bold text-white leading-tight cyberpunk-glow"
+                    className="glitch text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight cyberpunk-glow"
                     data-text={resumeData.name}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1063,6 +1164,14 @@ export default function SearchInterface() {
             </div>
           </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <CareerGraph />
+          </motion.div>
+
           {/* Search Panel */}
           <motion.div
             className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8 space-y-6 shadow-[0_0_55px_rgba(52,211,153,0.12)]"
@@ -1098,7 +1207,7 @@ export default function SearchInterface() {
                     ref={queryInputRef}
                     className="w-full h-20 rounded-2xl bg-black/80 pl-14 pr-20 text-lg md:text-xl text-white shadow-[inset_0_0_20px_rgba(56,189,248,0.08)]
                     focus:outline-none focus:ring-2 focus:ring-[#34d399] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 placeholder:text-white/40"
-                    placeholder="What do you want to know about me?"
+                    placeholder={PLACEHOLDERS[placeholderIndex]}
                     aria-label="Search Aryan's portfolio"
                   />
                   <button
@@ -1460,6 +1569,8 @@ export default function SearchInterface() {
         </motion.div>
       </div>
 
+      {tourActive && <GuidedTour onExit={() => setTourActive(false)} />}
+
       {/* tmux-style status bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 hidden items-center gap-0 border-t border-emerald-400/20 bg-black/90 font-mono text-[11px] backdrop-blur md:flex">
         <span className="bg-emerald-400/90 px-3 py-1 font-semibold text-black">ARYAN.SYS</span>
@@ -1467,7 +1578,17 @@ export default function SearchInterface() {
         <span className="px-3 py-1 text-white/50">{resumeData.contact.location.toLowerCase()}</span>
         <span className="px-3 py-1 text-white/50">microsoft · copilot studio</span>
         <span className="px-3 py-1 text-white/50">{resumeData.sections.research.length} publications</span>
-        <span className="ml-auto px-3 py-1 text-white/40">
+        {visitorCount !== null && (
+          <span className="px-3 py-1 text-[#38bdf8]/80">visitor #{visitorCount}</span>
+        )}
+        <button
+          type="button"
+          onClick={() => setRecruiterMode(true)}
+          className="ml-auto px-3 py-1 text-white/50 transition hover:text-emerald-300"
+        >
+          --recruiter
+        </button>
+        <span className="px-3 py-1 text-white/40">
           press <kbd className="rounded border border-white/20 bg-white/10 px-1 text-emerald-300">/</kbd> to query
         </span>
         <span className="bg-white/10 px-3 py-1 text-white/70">{missionClock}</span>
