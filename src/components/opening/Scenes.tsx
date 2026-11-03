@@ -1,77 +1,24 @@
 'use client';
 
-import { useMemo, useRef, useState, type ReactNode } from 'react';
-import {
-  motion,
-  useInView,
-  useMotionValueEvent,
-  useScroll,
-  useTransform,
-  type MotionValue
-} from 'framer-motion';
-import MediaWordmark from './MediaWordmark';
+import { useMemo, useState, type ReactNode } from 'react';
+import { motion, useMotionValueEvent, useTransform, type MotionValue } from 'framer-motion';
 import { mulberry32 } from './util';
 import { resumeData } from '../../data/resumeData';
+
+/* Scenes of the auto-playing opening film. Each "stage" fills the hero and is
+   driven by `p`, its own 0 → 1 progress on the film's timeline. */
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 const DISPLAY = 'studio-display text-[#f5f5f7]';
 
-function useSceneProgress() {
-  const ref = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
-  return { ref, p: scrollYProgress };
-}
-
-/* ───────────────────────── Hero ───────────────────────── */
-
-export function HeroScene({
-  onAsk,
-  onRecruiter,
-  onSettled
-}: {
-  onAsk: () => void;
-  onRecruiter: () => void;
-  onSettled: () => void;
-}) {
-  const [done, setDone] = useState(false);
-  const reveal = (delay: number) => ({
-    initial: { opacity: 0, y: 14 },
-    animate: done ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 },
-    transition: { duration: 0.8, ease: EASE, delay }
-  });
-
+/** Full-screen layer for one scene; hidden outside its slot on the timeline. */
+function Layer({ p, children, className = '' }: { p: MotionValue<number>; children: ReactNode; className?: string }) {
+  const opacity = useTransform(p, [0, 0.04, 0.94, 1], [0, 1, 1, 0]);
+  const visibility = useTransform(p, (v) => (v <= 0 || v >= 1 ? 'hidden' : 'visible'));
   return (
-    <section id="top" className="studio-scene flex h-[100svh] min-h-[560px] flex-col items-center justify-center overflow-hidden px-4 text-center">
-      <MediaWordmark
-        as="h1"
-        text={resumeData.name}
-        className="text-[clamp(44px,11.6vw,164px)]"
-        onSettled={() => {
-          setDone(true);
-          onSettled();
-        }}
-      />
-      <motion.div {...reveal(0)} className="mt-6 md:mt-8">
-        <p className={`${DISPLAY} text-[clamp(21px,2.6vw,36px)]`}>Research Engineer at Microsoft.</p>
-        <p className="mt-2 text-[clamp(15px,1.5vw,21px)] text-[#86868b]">Building agentic AI for Copilot Studio.</p>
-      </motion.div>
-      <motion.div {...reveal(0.15)} className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
-        <button
-          type="button"
-          onClick={onAsk}
-          className="rounded-full bg-[#0071e3] px-6 py-2.5 text-[15px] font-medium text-white transition hover:bg-[#0077ed]"
-        >
-          Ask my agent
-        </button>
-        <button type="button" onClick={onRecruiter} className="text-[15px] text-[#2997ff] transition hover:underline">
-          View résumé ›
-        </button>
-      </motion.div>
-      <motion.div {...reveal(0.6)} className="pointer-events-none absolute bottom-7 flex flex-col items-center gap-2" aria-hidden="true">
-        <span className="text-[11px] uppercase tracking-[0.24em] text-[#6e6e73]">Scroll</span>
-        <span className="studio-scrollcue block h-9 w-px bg-gradient-to-b from-[#a1a1a6] to-transparent" />
-      </motion.div>
-    </section>
+    <motion.div className={`pointer-events-none absolute inset-0 ${className}`} style={{ opacity, visibility }} aria-hidden="true">
+      {children}
+    </motion.div>
   );
 }
 
@@ -88,22 +35,18 @@ function Word({ p, inAt, outAt, children }: { p: MotionValue<number>; inAt: numb
   );
 }
 
-export function StatementScene() {
-  const { ref, p } = useSceneProgress();
+export function StatementStage({ p }: { p: MotionValue<number> }) {
   return (
-    <section ref={ref} className="studio-scene h-[170vh]" aria-label="One engineer. Endless experiments.">
-      <div className={`studio-sticky flex items-center justify-center px-4 ${DISPLAY} text-[clamp(44px,8.6vw,132px)]`}>
-        <p className="absolute inset-x-4 flex flex-wrap justify-center gap-x-[0.24em] text-center" aria-hidden="true">
-          <Word p={p} inAt={0.06} outAt={0.44}>One</Word>
-          <Word p={p} inAt={0.2} outAt={0.44}>engineer.</Word>
-        </p>
-        <p className="absolute inset-x-4 flex flex-wrap justify-center gap-x-[0.24em] text-center" aria-hidden="true">
-          <Word p={p} inAt={0.52} outAt={0.93}>Endless</Word>
-          <Word p={p} inAt={0.66} outAt={0.93}>experiments.</Word>
-        </p>
-        <p className="sr-only">One engineer. Endless experiments.</p>
-      </div>
-    </section>
+    <Layer p={p} className={`flex items-center justify-center px-4 ${DISPLAY} text-[clamp(44px,8.6vw,132px)]`}>
+      <p className="absolute inset-x-4 flex flex-wrap justify-center gap-x-[0.24em] text-center">
+        <Word p={p} inAt={0.06} outAt={0.44}>One</Word>
+        <Word p={p} inAt={0.2} outAt={0.44}>engineer.</Word>
+      </p>
+      <p className="absolute inset-x-4 flex flex-wrap justify-center gap-x-[0.24em] text-center">
+        <Word p={p} inAt={0.52} outAt={0.93}>Endless</Word>
+        <Word p={p} inAt={0.66} outAt={0.93}>experiments.</Word>
+      </p>
+    </Layer>
   );
 }
 
@@ -144,7 +87,6 @@ function BeatBuild({ lp }: { lp: MotionValue<number> }) {
       <motion.span
         className="relative inline-flex h-[0.8em] shrink-0 overflow-hidden rounded-[0.09em] border-[0.03em] border-[#a35dff]"
         style={{ width: clipW, opacity: clipO, boxShadow: '0 0 0.35em rgba(163,93,255,0.55)' }}
-        aria-hidden="true"
       >
         <span className="absolute inset-0 flex w-[3.3em] flex-col bg-[#120d1c]">
           <span className="flex h-[66%] gap-[0.03em] p-[0.03em]">
@@ -222,7 +164,6 @@ function BeatEvaluate({ lp }: { lp: MotionValue<number> }) {
       <p className="text-[#3a3a3c]">Evaluate it.</p>
       <motion.p
         className="absolute inset-0"
-        aria-hidden="true"
         style={{
           clipPath: clip,
           backgroundImage: 'repeating-linear-gradient(45deg, #d4ff3f 0 2px, #b6e324 2px 4px)',
@@ -236,7 +177,6 @@ function BeatEvaluate({ lp }: { lp: MotionValue<number> }) {
       <motion.span
         className="pointer-events-none absolute top-[0.32em] h-[0.42em] w-[0.42em] -translate-x-1/2 rounded-full border-2 border-white/90"
         style={{ left, y: bob, opacity: cursorO }}
-        aria-hidden="true"
       />
     </div>
   );
@@ -258,17 +198,12 @@ function BeatFineTune({ lp }: { lp: MotionValue<number> }) {
               'linear-gradient(rgba(0,0,0,0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.55) 1px, transparent 1px)',
             backgroundSize: '0.09em 0.09em'
           }}
-          aria-hidden="true"
         />
       </motion.p>
-      <motion.p
-        className="absolute inset-0 text-[#d7ff3a]"
-        style={{ clipPath: crisp, textShadow: '0 0 0.18em rgba(198,255,40,0.55)' }}
-        aria-hidden="true"
-      >
+      <motion.p className="absolute inset-0 text-[#d7ff3a]" style={{ clipPath: crisp, textShadow: '0 0 0.18em rgba(198,255,40,0.55)' }}>
         Fine-tune it.
       </motion.p>
-      <motion.span className="absolute -top-[0.3em] h-[1.65em] w-px bg-white/80" style={{ left }} aria-hidden="true" />
+      <motion.span className="absolute -top-[0.3em] h-[1.65em] w-px bg-white/80" style={{ left }} />
     </div>
   );
 }
@@ -302,8 +237,8 @@ function BeatWrite({ lp }: { lp: MotionValue<number> }) {
   );
 }
 
-function Beat({ p, index, count, children }: { p: MotionValue<number>; index: number; count: number; children: (lp: MotionValue<number>) => ReactNode }) {
-  const lp = useTransform(p, [index / count, (index + 1) / count], [0, 1]);
+function Beat({ p, from, to, children }: { p: MotionValue<number>; from: number; to: number; children: (lp: MotionValue<number>) => ReactNode }) {
+  const lp = useTransform(p, [from, to], [0, 1]);
   const opacity = useTransform(lp, [0, 0.1, 0.88, 1], [0, 1, 1, 0]);
   const scale = useTransform(lp, [0, 0.1, 0.88, 1], [0.97, 1, 1, 1.02]);
   return (
@@ -313,8 +248,20 @@ function Beat({ p, index, count, children }: { p: MotionValue<number>; index: nu
   );
 }
 
-export function VerbScene() {
-  const { ref, p } = useSceneProgress();
+// relative screen time per beat: the "Build an agent." beat needs the longest
+const VERB_WEIGHTS = [2.2, 1.2, 1.0, 1.3, 1.3, 1.4, 1.1];
+const VERB_RANGES: [number, number][] = (() => {
+  const total = VERB_WEIGHTS.reduce((a, b) => a + b, 0);
+  const out: [number, number][] = [];
+  let acc = 0;
+  for (const w of VERB_WEIGHTS) {
+    out.push([acc / total, (acc + w) / total]);
+    acc += w;
+  }
+  return out;
+})();
+
+export function VerbStage({ p }: { p: MotionValue<number> }) {
   const beats: ((lp: MotionValue<number>) => ReactNode)[] = [
     (lp) => <BeatBuild lp={lp} />,
     (lp) => <BeatGround lp={lp} />,
@@ -325,15 +272,13 @@ export function VerbScene() {
     () => <p className={`${DISPLAY} ${VERB_TEXT} !text-[#2997ff]`}>Ship it.</p>
   ];
   return (
-    <section ref={ref} className="studio-scene h-[440vh]" aria-label="Build an agent. Ground it. Loop it. Evaluate it. Fine-tune it. Write it up. Ship it.">
-      <div className="studio-sticky" aria-hidden="true">
-        {beats.map((render, i) => (
-          <Beat key={i} p={p} index={i} count={beats.length}>
-            {render}
-          </Beat>
-        ))}
-      </div>
-    </section>
+    <Layer p={p}>
+      {beats.map((render, i) => (
+        <Beat key={i} p={p} from={VERB_RANGES[i][0]} to={VERB_RANGES[i][1]}>
+          {render}
+        </Beat>
+      ))}
+    </Layer>
   );
 }
 
@@ -392,7 +337,7 @@ function RegionPattern({ kind, ink, seed }: { kind: Track['kind']; ink: string; 
   }, [kind, ink, seed]);
 
   return (
-    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
       {shapes}
     </svg>
   );
@@ -425,25 +370,21 @@ function Region({ track, p, index, count }: { track: Track; p: MotionValue<numbe
   );
 }
 
-export function TracksScene() {
-  const { ref, p } = useSceneProgress();
+export function TracksStage({ p }: { p: MotionValue<number> }) {
   const playhead = useTransform(p, [0.1, 0.95], ['0%', '100%']);
-  const headO = useTransform(p, [0.08, 0.14, 0.92, 1], [0, 1, 1, 0]);
+  const headO = useTransform(p, [0.08, 0.14, 0.9, 0.97], [0, 1, 1, 0]);
   return (
-    <section ref={ref} className="studio-scene h-[230vh]" aria-label="Career: VIT, Oracle, UC San Diego, Cisco, Microsoft">
-      <div className="studio-sticky flex items-center justify-center px-4">
-        <div className="relative w-full max-w-[860px] space-y-2.5 md:space-y-3">
-          {TRACKS.map((track, i) => (
-            <Region key={track.label} track={track} p={p} index={i} count={TRACKS.length} />
-          ))}
-          <motion.span
-            className="pointer-events-none absolute -bottom-3 -top-3 w-px bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-            style={{ left: playhead, opacity: headO }}
-            aria-hidden="true"
-          />
-        </div>
+    <Layer p={p} className="flex items-center justify-center px-4">
+      <div className="relative w-full max-w-[860px] space-y-2.5 md:space-y-3">
+        {TRACKS.map((track, i) => (
+          <Region key={track.label} track={track} p={p} index={i} count={TRACKS.length} />
+        ))}
+        <motion.span
+          className="absolute -bottom-3 -top-3 w-px bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+          style={{ left: playhead, opacity: headO }}
+        />
       </div>
-    </section>
+    </Layer>
   );
 }
 
@@ -538,7 +479,7 @@ function ReelRow({ item, index, center }: { item: ReelItem; index: number; cente
   return (
     <motion.div className="absolute left-0 right-0 flex items-center justify-center gap-[0.28em]" style={{ y, scale, opacity }}>
       <span className="flex h-[1.02em] w-[1.02em] shrink-0 items-center justify-center rounded-[0.24em] border border-white/10 bg-gradient-to-b from-[#2c2c30] to-[#121214] shadow-[0_0.06em_0.2em_rgba(0,0,0,0.6)]">
-        <svg viewBox="0 0 24 24" className="h-[0.62em] w-[0.62em]" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="h-[0.62em] w-[0.62em]">
           {item.icon}
         </svg>
       </span>
@@ -547,71 +488,23 @@ function ReelRow({ item, index, center }: { item: ReelItem; index: number; cente
   );
 }
 
-export function ReelScene() {
-  const { ref, p } = useSceneProgress();
-  const center = useTransform(p, [0.05, 0.95], [-0.4, REEL.length - 0.6]);
+export function ReelStage({ p }: { p: MotionValue<number> }) {
+  const center = useTransform(p, [0.04, 0.96], [-0.4, REEL.length - 0.6]);
   return (
-    <section ref={ref} className="studio-scene h-[220vh]" aria-label={`Focus areas: ${REEL.map((r) => r.name).join(', ')}`}>
-      <div className={`studio-sticky flex items-center justify-center ${DISPLAY} text-[clamp(38px,7vw,100px)]`} aria-hidden="true">
-        <div className="relative h-[1.2em] w-full -translate-y-[0.6em]">
-          {REEL.map((item, i) => (
-            <ReelRow key={item.name} item={item} index={i} center={center} />
-          ))}
-        </div>
+    <Layer p={p} className={`flex items-center justify-center ${DISPLAY} text-[clamp(38px,7vw,100px)]`}>
+      <div className="relative h-[1.2em] w-full -translate-y-[0.6em]">
+        {REEL.map((item, i) => (
+          <ReelRow key={item.name} item={item} index={i} center={center} />
+        ))}
       </div>
-    </section>
+    </Layer>
   );
 }
 
-/* ───────────────────────── Closing ───────────────────────── */
-
-export function ClosingScene({ onAsk }: { onAsk: () => void }) {
-  const ref = useRef<HTMLElement | null>(null);
-  const inView = useInView(ref, { amount: 0.55 });
-  const [done, setDone] = useState(false);
-  const links = [
-    { label: 'Email', href: `mailto:${resumeData.contact.email}` },
-    { label: 'LinkedIn', href: `https://${resumeData.contact.linkedin}` },
-    { label: 'GitHub', href: `https://${resumeData.contact.github}` },
-    { label: 'Scholar', href: `https://${resumeData.contact.scholar}` }
-  ];
-  return (
-    <section ref={ref} className="studio-scene flex min-h-[100svh] flex-col items-center justify-center px-4 py-24 text-center">
-      <MediaWordmark text={resumeData.name} play={inView} className="text-[clamp(40px,9vw,128px)]" onSettled={() => setDone(true)} />
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={done ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-        transition={{ duration: 0.8, ease: EASE }}
-        className="mt-8 flex flex-col items-center"
-      >
-        <p className={`${DISPLAY} text-[clamp(22px,2.8vw,40px)]`}>Ask me anything.</p>
-        <p className="mt-2 max-w-md text-[15px] text-[#86868b] md:text-[17px]">
-          My agent has read every line of my résumé, papers and repos.
-        </p>
-        <button
-          type="button"
-          onClick={onAsk}
-          className="mt-7 rounded-full bg-[#0071e3] px-6 py-2.5 text-[15px] font-medium text-white transition hover:bg-[#0077ed]"
-        >
-          Start asking
-        </button>
-        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[14px]">
-          {links.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              target={l.href.startsWith('http') ? '_blank' : undefined}
-              rel={l.href.startsWith('http') ? 'noreferrer' : undefined}
-              className="text-[#2997ff] transition hover:underline"
-            >
-              {l.label} ›
-            </a>
-          ))}
-        </div>
-      </motion.div>
-    </section>
-  );
-}
+/** Plain-text version of the film for screen readers. */
+export const FILM_SUMMARY = `One engineer. Endless experiments. Build an agent. Ground it. Loop it. Evaluate it. Fine-tune it. Write it up. Ship it. Career: VIT, Oracle, UC San Diego, Cisco, Microsoft. Focus areas: ${REEL.map(
+  (r) => r.name
+).join(', ')}.`;
 
 /* ───────────────────────── Nav ───────────────────────── */
 
