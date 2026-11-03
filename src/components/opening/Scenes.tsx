@@ -412,7 +412,7 @@ export function OpeningNav({
   onTour: () => void;
   onRecruiter: () => void;
 }) {
-  const link = 'text-[12px] text-[#e8e8ed]/80 transition hover:text-white';
+  const link = 'text-[12px] !text-[#e8e8ed]/80 transition hover:!text-white';
   return (
     <motion.nav
       initial={false}

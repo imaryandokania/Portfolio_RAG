@@ -130,7 +130,7 @@ function FilmHero({ onAsk, onRecruiter, onDone }: { onAsk: () => void; onRecruit
               href={l.href}
               target={l.href.startsWith('http') ? '_blank' : undefined}
               rel={l.href.startsWith('http') ? 'noreferrer' : undefined}
-              className="text-[#86868b] transition hover:text-[#f5f5f7]"
+              className="!text-[#86868b] transition hover:!text-[#f5f5f7]"
             >
               {l.label}
             </a>

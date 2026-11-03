@@ -67,10 +67,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-preview.png",
-        width: 1200,
-        height: 630,
-        alt: "Aryan Dokania, Research Engineer at Microsoft"
+        url: "/og-site.png",
+        width: 2400,
+        height: 1260,
+        alt: "Aryan Dokania's portfolio: Research Engineer at Microsoft"
       }
     ]
   },
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aryan Dokania",
     description: shareDescription,
-    images: ["/og-preview.png"]
+    images: ["/og-site.png"]
   },
   icons: {
     icon: "/favicon.ico",
