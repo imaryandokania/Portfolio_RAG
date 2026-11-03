@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from 'framer-motion';
 import MediaWordmark from './MediaWordmark';
-import { FILM_SUMMARY, OpeningNav, ReelStage, StatementStage, TracksStage, VerbStage } from './Scenes';
+import { FILM_SUMMARY, OpeningNav, ReelStage, StatementStage, VerbStage } from './Scenes';
 import { resumeData } from '../../data/resumeData';
 
 type Props = {
@@ -17,14 +17,13 @@ type Props = {
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 
 /* Film timeline, in seconds. Modelled on Apple's "Introducing Apple Creator
-   Studio": the name builds itself, the scenes play, and the name returns. */
+   Studio": the name builds itself, the scenes play, then the name fades back in. */
 const T = {
   introFade: 2.9,
   statement: [3.3, 6.4] as [number, number],
   verbs: [6.4, 15.9] as [number, number],
-  tracks: [15.9, 18.7] as [number, number],
-  reel: [18.7, 21.7] as [number, number],
-  end: 21.7
+  reel: [15.9, 18.9] as [number, number],
+  end: 18.9
 };
 const TOTAL = T.end + 0.3;
 
@@ -36,7 +35,6 @@ function FilmHero({ onAsk, onRecruiter, onDone }: { onAsk: () => void; onRecruit
   const t = useMotionValue(0);
   const [segment, setSegment] = useState<Segment>('intro');
   const segRef = useRef<Segment>('intro');
-  const [wordKey, setWordKey] = useState(0);
   const [settled, setSettled] = useState(false);
   const [run, setRun] = useState(0);
   const controlsRef = useRef<ReturnType<typeof animate> | null>(null);
@@ -44,14 +42,11 @@ function FilmHero({ onAsk, onRecruiter, onDone }: { onAsk: () => void; onRecruit
   useMotionValueEvent(t, 'change', (v) => {
     const seg = segmentAt(v);
     if (seg === segRef.current) return;
-    const prev = segRef.current;
     segRef.current = seg;
     setSegment(seg);
-    // the name rebuilds itself when it comes back at the end, and on replay
-    if (seg === 'end' || (seg === 'intro' && prev === 'end')) {
-      setSettled(false);
-      setWordKey((k) => k + 1);
-    }
+    // at the end the name simply fades back in (no second build), then the details follow
+    setSettled(seg === 'end');
+    if (seg === 'end') onDone();
   });
 
   useEffect(() => {
@@ -74,13 +69,12 @@ function FilmHero({ onAsk, onRecruiter, onDone }: { onAsk: () => void; onRecruit
   const nameOpacity = useTransform(t, [T.introFade, T.statement[0], T.end, T.end + 0.25], [1, 0, 0, 1]);
   const pStatement = useTransform(t, T.statement, [0, 1]);
   const pVerbs = useTransform(t, T.verbs, [0, 1]);
-  const pTracks = useTransform(t, T.tracks, [0, 1]);
   const pReel = useTransform(t, T.reel, [0, 1]);
 
   const reveal = (delay: number) => ({
     initial: { opacity: 0, y: 14 },
     animate: settled ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 },
-    transition: { duration: 0.8, ease: EASE, delay: settled ? delay : 0 }
+    transition: { duration: 0.8, ease: EASE, delay: settled ? delay + 0.25 : 0 }
   });
 
   const links = [
@@ -102,25 +96,17 @@ function FilmHero({ onAsk, onRecruiter, onDone }: { onAsk: () => void; onRecruit
 
       <StatementStage p={pStatement} />
       <VerbStage p={pVerbs} />
-      <TracksStage p={pTracks} />
       <ReelStage p={pReel} />
 
       <motion.div
         className={`relative z-10 flex flex-col items-center ${segment === 'end' ? '' : 'pointer-events-none'}`}
         style={{ opacity: nameOpacity }}
       >
-        <MediaWordmark
-          as="h1"
-          text={resumeData.name}
-          replayKey={wordKey}
-          interactive={segment === 'end'}
-          className="text-[clamp(44px,11.6vw,164px)]"
-          onSettled={() => {
-            if (segRef.current !== 'end') return;
-            setSettled(true);
-            onDone();
-          }}
-        />
+        {segment === 'end' ? (
+          <h1 className="mw-root text-[clamp(44px,11.6vw,164px)]">{resumeData.name}</h1>
+        ) : (
+          <MediaWordmark as="h1" text={resumeData.name} interactive={false} className="text-[clamp(44px,11.6vw,164px)]" />
+        )}
         <motion.div {...reveal(0)} className="mt-6 md:mt-8">
           <p className="studio-display text-[clamp(21px,2.6vw,36px)] text-[#f5f5f7]">Research Engineer at Microsoft.</p>
           <p className="mt-2 text-[clamp(15px,1.5vw,21px)] text-[#86868b]">Building agentic AI for Copilot Studio.</p>
@@ -175,7 +161,7 @@ function FilmHero({ onAsk, onRecruiter, onDone }: { onAsk: () => void; onRecruit
 /**
  * The opening page: one screen that plays like Apple's "Introducing Apple
  * Creator Studio" film — name → "One engineer. / Endless experiments." →
- * verb run → Logic-style career tracks → focus reel → name again with links.
+ * verb run → focus reel → name again with links.
  */
 export default function OpeningSequence({ onAsk, onTour, onRecruiter, onPastOpening }: Props) {
   const [heroDone, setHeroDone] = useState(false);

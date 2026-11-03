@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion, useMotionValueEvent, useTransform, type MotionValue } from 'framer-motion';
-import { mulberry32 } from './util';
 import { resumeData } from '../../data/resumeData';
 
 /* Scenes of the auto-playing opening film. Each "stage" fills the hero and is
@@ -282,112 +281,6 @@ export function VerbStage({ p }: { p: MotionValue<number> }) {
   );
 }
 
-/* ───────────────────── Career as Logic-style track regions ───────────────────── */
-
-type Track = { label: string; body: string; head: string; edge: string; ink: string; headInk: string; kind: 'steps' | 'notes' | 'wave' };
-
-const TRACKS: Track[] = [
-  { label: 'VIT_BTECH-CSE_2019-23', body: '#62c43c', head: '#62c43c', edge: '#93e674', ink: '#f4ffe9', headInk: '#effff0', kind: 'steps' },
-  { label: 'ORACLE_SOFTWARE-DEVELOPER_2023-24', body: '#8d35d4', head: '#b07cf2', edge: '#c9a2ff', ink: '#ffffff', headInk: '#ffffff', kind: 'notes' },
-  { label: 'UCSD_MS-CS-RESEARCH_2024-26', body: '#2b0a27', head: '#b01f8b', edge: '#d84bb3', ink: '#e7a8d2', headInk: '#ffffff', kind: 'wave' },
-  { label: 'CISCO_ML-ENGINEER-INTERN_2025', body: '#cf7a3a', head: '#f2c3a0', edge: '#f5ad78', ink: '#f8dcc6', headInk: '#5a3215', kind: 'wave' },
-  { label: 'MICROSOFT_RESEARCH-ENGINEER_2026', body: '#1d5fd8', head: '#7fb2ff', edge: '#a9cbff', ink: '#ffffff', headInk: '#0b2350', kind: 'notes' }
-];
-
-function RegionPattern({ kind, ink, seed }: { kind: Track['kind']; ink: string; seed: number }) {
-  const shapes = useMemo(() => {
-    const r = mulberry32(seed);
-    if (kind === 'steps') {
-      const cells: ReactNode[] = [];
-      for (let c = 0; c < 24; c += 1) {
-        for (let row = 0; row < 3; row += 1) {
-          const hit = (row === 2 && c % 2 === 0) || (row === 1 && c % 4 === 2) || (row === 0 && r() > 0.82);
-          cells.push(
-            <rect key={`${c}-${row}`} x={c * 4.1 + 1} y={4 + row * 8.4} width={2.6} height={6.4} rx={0.5} fill={hit ? ink : 'rgba(255,255,255,0.13)'} />
-          );
-        }
-      }
-      return cells;
-    }
-    if (kind === 'notes') {
-      const notes: ReactNode[] = [];
-      let x = 1;
-      while (x < 96) {
-        const len = 3 + Math.floor(r() * 3) * 2;
-        const y = 8 + Math.floor(r() * 4) * 5;
-        notes.push(
-          <g key={x}>
-            <rect x={x} y={y - 1.6} width={0.6} height={3.2} fill={ink} />
-            <rect x={x} y={y - 0.35} width={len} height={0.7} fill={ink} />
-          </g>
-        );
-        x += len + 1.5 + r() * 2;
-      }
-      return notes;
-    }
-    const bars: ReactNode[] = [];
-    for (let i = 0; i < 120; i += 1) {
-      const env = 0.35 + 0.65 * Math.abs(Math.sin(i * 0.11 + seed));
-      for (const cy of [9, 21]) {
-        const h = (1 + r() * 6) * env;
-        bars.push(<rect key={`${i}-${cy}`} x={i * 0.83} y={cy - h / 2} width={0.42} height={h} fill={ink} opacity={0.9} />);
-      }
-    }
-    return bars;
-  }, [kind, ink, seed]);
-
-  return (
-    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-      {shapes}
-    </svg>
-  );
-}
-
-function Region({ track, p, index, count }: { track: Track; p: MotionValue<number>; index: number; count: number }) {
-  const start = 0.06 + index * (0.62 / count);
-  const opacity = useTransform(p, [start, start + 0.06], [0, 1]);
-  const y = useTransform(p, [start, start + 0.08], [-28, 0]);
-  const isLast = index === count - 1;
-  const glow = useTransform(
-    p,
-    isLast ? [start, start + 0.08] : [start, start + 0.06, start + 0.62 / count, start + 0.62 / count + 0.05],
-    isLast ? [0, 1] : [0, 1, 1, 0]
-  );
-  const shadow = useTransform(glow, (g) => `0 0 ${28 * g}px ${track.edge}${Math.round(g * 160).toString(16).padStart(2, '0')}`);
-
-  return (
-    <motion.div
-      className="relative overflow-hidden rounded-[10px] border-[1.5px]"
-      style={{ opacity, y, borderColor: track.edge, background: track.body, boxShadow: shadow }}
-    >
-      <div className="px-2.5 py-[3px] text-[10px] font-medium tracking-[0.02em] md:text-[11px]" style={{ background: track.head, color: track.headInk }}>
-        {track.label}
-      </div>
-      <div className="relative h-[46px] md:h-[64px]">
-        <RegionPattern kind={track.kind} ink={track.ink} seed={index * 7 + 3} />
-      </div>
-    </motion.div>
-  );
-}
-
-export function TracksStage({ p }: { p: MotionValue<number> }) {
-  const playhead = useTransform(p, [0.1, 0.95], ['0%', '100%']);
-  const headO = useTransform(p, [0.08, 0.14, 0.9, 0.97], [0, 1, 1, 0]);
-  return (
-    <Layer p={p} className="flex items-center justify-center px-4">
-      <div className="relative w-full max-w-[860px] space-y-2.5 md:space-y-3">
-        {TRACKS.map((track, i) => (
-          <Region key={track.label} track={track} p={p} index={i} count={TRACKS.length} />
-        ))}
-        <motion.span
-          className="absolute -bottom-3 -top-3 w-px bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-          style={{ left: playhead, opacity: headO }}
-        />
-      </div>
-    </Layer>
-  );
-}
-
 /* ───────────────────── Focus-area reel ───────────────────── */
 
 type ReelItem = { name: string; color: string; icon: ReactNode };
@@ -502,7 +395,7 @@ export function ReelStage({ p }: { p: MotionValue<number> }) {
 }
 
 /** Plain-text version of the film for screen readers. */
-export const FILM_SUMMARY = `One engineer. Endless experiments. Build an agent. Ground it. Loop it. Evaluate it. Fine-tune it. Write it up. Ship it. Career: VIT, Oracle, UC San Diego, Cisco, Microsoft. Focus areas: ${REEL.map(
+export const FILM_SUMMARY = `One engineer. Endless experiments. Build an agent. Ground it. Loop it. Evaluate it. Fine-tune it. Write it up. Ship it. Focus areas: ${REEL.map(
   (r) => r.name
 ).join(', ')}.`;
 
