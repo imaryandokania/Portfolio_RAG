@@ -36,6 +36,10 @@ const pixelFont = Silkscreen({
   display: "swap"
 });
 
+// Shared by LinkedIn / X link previews (LinkedIn asks for 100+ characters)
+const shareDescription =
+  "Research Engineer at Microsoft on Copilot Studio, building AI agents, retrieval, and evaluations. Ask my portfolio's AI agent about my work and research.";
+
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://aryandokania.vercel.app/";
 
@@ -56,18 +60,25 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Aryan Dokania",
-    description:
-      "AI-assisted resume experience for Aryan Dokania with searchable projects, experience, and skills.",
+    description: shareDescription,
     url: siteUrl,
     siteName: "Aryan Dokania",
     locale: "en_US",
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: "/og-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Aryan Dokania, Research Engineer at Microsoft"
+      }
+    ]
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Aryan Dokania",
-    description:
-      "Interactive resume for Aryan Dokania with AI-assisted search over projects, experience, and skills."
+    description: shareDescription,
+    images: ["/og-preview.png"]
   },
   icons: {
     icon: "/favicon.ico",
