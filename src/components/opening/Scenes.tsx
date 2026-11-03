@@ -632,7 +632,7 @@ export function OpeningNav({
       initial={false}
       animate={{ y: visible ? 0 : -56, opacity: visible ? 1 : 0 }}
       transition={{ duration: 0.5, ease: EASE }}
-      className="studio fixed inset-x-0 top-0 z-[60] h-11 border-b border-white/[0.06] bg-black/70 backdrop-blur-xl backdrop-saturate-150"
+      className="studio fixed inset-x-0 top-0 z-[45] h-11 border-b border-white/[0.06] bg-black/70 backdrop-blur-xl backdrop-saturate-150"
       aria-label="Site"
     >
       <div className="mx-auto flex h-full max-w-[1024px] items-center justify-between px-4">

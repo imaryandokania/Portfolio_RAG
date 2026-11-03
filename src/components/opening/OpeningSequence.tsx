@@ -44,8 +44,10 @@ export default function OpeningSequence({ onAsk, onTour, onRecruiter, onPastOpen
   }, []);
 
   return (
-    <div className="studio relative z-10 bg-black">
+    <>
+      {/* outside the z-10 wrapper so the fixed nav stays above the sections that follow */}
       <OpeningNav visible={heroDone || scrolled} onAsk={onAsk} onTour={onTour} onRecruiter={onRecruiter} />
+      <div className="studio relative z-10 bg-black">
       <HeroScene onAsk={onAsk} onRecruiter={onRecruiter} onSettled={() => setHeroDone(true)} />
       <CollageScene />
       <StatementScene />
@@ -54,6 +56,7 @@ export default function OpeningSequence({ onAsk, onTour, onRecruiter, onPastOpen
       <ReelScene />
       <ClosingScene onAsk={onAsk} />
       <div ref={endRef} aria-hidden="true" />
-    </div>
+      </div>
+    </>
   );
 }
