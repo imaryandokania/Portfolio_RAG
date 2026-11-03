@@ -270,22 +270,6 @@ html {
   animation: studio-scrollcue 2.2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
 }
 
-/* collage tiles: content is sized in container units so it scales with the tile */
-.studio-tile {
-  position: absolute;
-  overflow: hidden;
-  border-radius: clamp(8px, 0.9vw, 16px);
-  background: #111;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 24px 60px rgba(0, 0, 0, 0.65);
-  container-type: size;
-  will-change: transform;
-}
-
-@keyframes studio-orb {
-  0%, 100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
-  50% { transform: scale(1.08) rotate(25deg); filter: hue-rotate(35deg); }
-}
-
 /* ── MediaWordmark ── */
 .mw-root {
   position: relative;

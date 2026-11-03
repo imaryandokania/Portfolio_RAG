@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import CollageScene from './CollageScene';
 import { ClosingScene, HeroScene, OpeningNav, ReelScene, StatementScene, TracksScene, VerbScene } from './Scenes';
 
 type Props = {
@@ -14,7 +13,7 @@ type Props = {
 
 /**
  * The opening page, modelled on Apple's "Introducing Apple Creator Studio" film:
- * mixed-media wordmark → screen collage burst → statement → verb run →
+ * mixed-media wordmark → statement → verb run →
  * Logic-style career tracks → focus reel → wordmark again → into the console.
  */
 export default function OpeningSequence({ onAsk, onTour, onRecruiter, onPastOpening }: Props) {
@@ -49,7 +48,6 @@ export default function OpeningSequence({ onAsk, onTour, onRecruiter, onPastOpen
       <OpeningNav visible={heroDone || scrolled} onAsk={onAsk} onTour={onTour} onRecruiter={onRecruiter} />
       <div className="studio relative z-10 bg-black">
       <HeroScene onAsk={onAsk} onRecruiter={onRecruiter} onSettled={() => setHeroDone(true)} />
-      <CollageScene />
       <StatementScene />
       <VerbScene />
       <TracksScene />
