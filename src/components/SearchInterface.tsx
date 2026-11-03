@@ -9,8 +9,8 @@ import { computeExperienceMetrics } from '../utils/resumeMetrics';
 import dynamic from 'next/dynamic';
 import SkillClusterBars from './SkillClusterBars';
 import VoiceOrb from './VoiceOrb';
-import TerminalBoot from './TerminalBoot';
 import ResumeSections from './ResumeSections';
+import OpeningSequence from './opening/OpeningSequence';
 import MatrixRain from './MatrixRain';
 import GithubHeatmap from './GithubHeatmap';
 
@@ -73,6 +73,7 @@ export default function SearchInterface() {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const visitCountedRef = useRef(false);
   const [crtOff, setCrtOff] = useState(false);
+  const [pastOpening, setPastOpening] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const soundOnRef = useRef(false);
   const tickCtxRef = useRef<AudioContext | null>(null);
@@ -134,75 +135,6 @@ export default function SearchInterface() {
   const hasDetectedSpeechRef = useRef(false);
   const pendingRecorderStartRef = useRef<(() => void) | null>(null);
   const discardRecordingRef = useRef(false);
-
-  const contactEntries = useMemo(
-    () => [
-      // {
-      //   label: 'Phone',
-      //   value: resumeData.contact.phone,
-      //   href: `tel:${resumeData.contact.phone.replace(/[^0-9+]/g, '')}`
-      // },
-      {
-        label: 'Email',
-        value: resumeData.contact.email,
-        href: `mailto:${resumeData.contact.email}`
-      },
-      {
-        label: 'LinkedIn',
-        value: 'aryandokania',
-        href: `https://${resumeData.contact.linkedin}`,
-        icon: (
-          <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M4.98 3.5a2.5 2.5 0 1 1-.01 5 2.5 2.5 0 0 1 .01-5ZM3 9h3.95v12H3zM10.5 9H14v1.64h.05c.49-.93 1.69-1.91 3.48-1.91 3.72 0 4.41 2.45 4.41 5.64V21H18V15.1c0-1.4-.03-3.21-2-3.21-2 0-2.31 1.56-2.31 3.09V21h-3.95z" />
-          </svg>
-        )
-      },
-      {
-        label: 'GitHub',
-        value: 'imaryandokania',
-        href: `https://${resumeData.contact.github}`,
-        icon: (
-          <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.69-3.88-1.54-3.88-1.54-.53-1.36-1.3-1.72-1.3-1.72-1.06-.73.08-.72.08-.72 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.74 1.27 3.41.97.1-.76.41-1.27.75-1.56-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.29 1.19-3.1-.12-.3-.52-1.52.11-3.17 0 0 .98-.31 3.21 1.18a11.1 11.1 0 0 1 2.92-.39c.99 0 1.99.13 2.92.39 2.22-1.49 3.2-1.18 3.2-1.18.64 1.65.24 2.87.12 3.17.74.81 1.19 1.84 1.19 3.1 0 4.41-2.69 5.38-5.25 5.66.42.36.8 1.08.8 2.17 0 1.57-.02 2.83-.02 3.22 0 .31.21.67.79.56A10.52 10.52 0 0 0 23.5 12c0-6.35-5.15-11.5-11.5-11.5Z" />
-          </svg>
-        )
-      },
-      {
-        label: 'Scholar',
-        value: 'Google Scholar',
-        href: `https://${resumeData.contact.scholar}`,
-        icon: (
-          <svg className="h-4 w-4 text-[#38bdf8]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 2 3 7l9 5 9-5-9-5Zm0 7.18L6.16 7 12 3.82 17.84 7 12 9.18Zm-9 4L12 18l9-4-4.5-2.5-4.5 2.5-4.5-2.5Zm0 4L12 22l9-4-4.5-2.5L12 17l-4.5-2.5Z" />
-          </svg>
-        )
-      }
-    ],
-    []
-  );
-
-  const primaryEducation = resumeData.sections.education?.[0];
-
-  const heroEducation = useMemo(() => {
-    if (!primaryEducation) {
-      return '';
-    }
-    const { degree = '', university = '' } = primaryEducation;
-
-    let compactDegree = degree;
-    if (/master of science/i.test(degree) && /computer science/i.test(degree)) {
-      compactDegree = 'MS CS';
-    } else if (/master of science/i.test(degree)) {
-      compactDegree = 'MS';
-    }
-
-    let compactUniversity = university;
-    if (/university of california san diego/i.test(university)) {
-      compactUniversity = 'UC San Diego';
-    }
-
-    return `${compactDegree} @ ${compactUniversity}`.trim();
-  }, [primaryEducation]);
 
   const playTick = useCallback(() => {
     if (!soundOnRef.current) return;
@@ -1060,6 +992,11 @@ export default function SearchInterface() {
     void queryAgent(searchQuery, { viaVoice: false, contextTurns: turns });
   };
 
+  const focusConsole = useCallback(() => {
+    document.getElementById('ask')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => queryInputRef.current?.focus({ preventScroll: true }), 650);
+  }, []);
+
   const handleResetConversation = useCallback(() => {
     setConversationTurns([]);
   }, []);
@@ -1205,130 +1142,34 @@ export default function SearchInterface() {
         )}
       </AnimatePresence>
       <motion.div
-        className="fixed inset-x-0 top-0 z-50 h-[2px] origin-left bg-gradient-to-r from-emerald-400 via-[#38bdf8] to-emerald-400"
+        className={`fixed inset-x-0 top-0 z-50 h-[2px] origin-left bg-gradient-to-r from-emerald-400 via-[#38bdf8] to-emerald-400 transition-opacity duration-500 ${
+          pastOpening ? 'opacity-100' : 'opacity-0'
+        }`}
         style={{ scaleX: scrollYProgress }}
       />
-      <CyberBackground />
-      <MatrixRain />
+      {pastOpening && <CyberBackground />}
+      {pastOpening && <MatrixRain />}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(52,211,153,0.15),_transparent_60%)]" />
       </div>
-      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 pb-24 relative z-10">
+      <OpeningSequence
+        onAsk={focusConsole}
+        onTour={() => setTourActive(true)}
+        onRecruiter={() => setRecruiterMode(true)}
+        onPastOpening={setPastOpening}
+      />
+      <div className="relative z-10 flex w-full flex-col items-center p-4 pb-24 pt-16">
         <motion.div 
           className="w-full max-w-6xl space-y-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Hero */}
-          <motion.div
-            className="relative overflow-hidden rounded-3xl border border-[#38bdf8]/30 bg-black/50 backdrop-blur-xl shadow-[0_0_45px_rgba(56,189,248,0.1)]"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.6 }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(56,189,248,0.18),_transparent_55%)] mix-blend-screen" />
-            <div className="relative flex items-center gap-2 border-b border-white/10 bg-black/50 px-5 py-3">
-              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-              <p className="ml-3 font-mono text-xs text-white/50">
-                <span className="text-emerald-400">aryan@portfolio</span>
-                <span className="text-white/40">:~$ </span>
-                <span className="text-white/80">./init_portfolio --mode=rag</span>
-              </p>
-              <div className="ml-auto flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTourActive(true)}
-                  className="rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/60 transition hover:border-[#38bdf8]/60 hover:text-[#38bdf8]"
-                  title="AI-guided walkthrough"
-                >
-                  ./tour.sh
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRecruiterMode(true)}
-                  className="rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/60 transition hover:border-emerald-400/60 hover:text-emerald-300"
-                  title="Clean, printable resume view"
-                >
-                  --recruiter
-                </button>
-              </div>
-            </div>
-            <div className="relative grid gap-8 p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-10">
-              <div className="space-y-5">
-                <motion.h1
-                  className="glitch text-4xl font-bold tracking-tight text-white leading-tight cyberpunk-glow md:text-6xl"
-                  data-text={resumeData.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                >
-                  {resumeData.name}
-                </motion.h1>
-                <motion.p
-                  className="text-lg text-[#38bdf8] md:text-xl"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  {resumeData.title}
-                  {heroEducation && <span className="text-white/50"> · {heroEducation}</span>}
-                </motion.p>
-                {resumeData.sections.summary && (
-                  <motion.p
-                    className="text-base leading-relaxed text-white/70"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                  >
-                    {resumeData.sections.summary[0]}
-                  </motion.p>
-                )}
-                <motion.div
-                  className="flex flex-wrap gap-2"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  {contactEntries.map(({ label, value, href, icon }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target={href?.startsWith('http') ? '_blank' : undefined}
-                      rel={href?.startsWith('http') ? 'noreferrer' : undefined}
-                      className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-xs text-white/70 transition hover:border-[#38bdf8]/60 hover:text-white"
-                    >
-                      {icon && <span>{icon}</span>}
-                      <span>{value}</span>
-                    </a>
-                  ))}
-                </motion.div>
-              </div>
-              <motion.div
-                initial={{ opacity: 0, x: 15 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 }}
-              >
-                <TerminalBoot />
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <CareerGraph />
-          </motion.div>
-
           {/* Query Console */}
           <motion.div
-            className="overflow-hidden rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_55px_rgba(52,211,153,0.08)]"
+            id="ask"
+            className="scroll-mt-24 overflow-hidden rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_55px_rgba(52,211,153,0.08)]"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -1615,6 +1456,14 @@ export default function SearchInterface() {
             </motion.div>
           </AnimatePresence>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <CareerGraph />
+          </motion.div>
+
           <ResumeSections />
 
           <GithubHeatmap />
@@ -1720,7 +1569,7 @@ export default function SearchInterface() {
       {tourActive && <GuidedTour onExit={() => setTourActive(false)} />}
 
       {/* tmux-style status bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 hidden items-center gap-0 border-t border-emerald-400/20 bg-black/90 font-mono text-[11px] backdrop-blur md:flex">
+      <div className={`fixed inset-x-0 bottom-0 z-40 hidden items-center gap-0 border-t border-emerald-400/20 bg-black/90 font-mono text-[11px] backdrop-blur transition-opacity duration-500 md:flex ${pastOpening ? 'opacity-100' : 'pointer-events-none opacity-0'}`}>
         <span className="bg-emerald-400/90 px-3 py-1 font-semibold text-black">ARYAN.SYS</span>
         <span className="px-3 py-1 text-emerald-300">● online</span>
         <span className="px-3 py-1 text-white/50">{resumeData.contact.location.toLowerCase()}</span>

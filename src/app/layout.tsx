@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Permanent_Marker, Pinyon_Script, Silkscreen } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,6 +11,28 @@ const inter = Inter({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
+  display: "swap"
+});
+
+// Decorative faces for the mixed-media wordmark in the opening
+const scriptFont = Pinyon_Script({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-script",
+  display: "swap"
+});
+
+const markerFont = Permanent_Marker({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-marker",
+  display: "swap"
+});
+
+const pixelFont = Silkscreen({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-pixel",
   display: "swap"
 });
 
@@ -69,7 +91,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} ${scriptFont.variable} ${markerFont.variable} ${pixelFont.variable} antialiased`}
+      >
         {children}
       </body>
     </html>
